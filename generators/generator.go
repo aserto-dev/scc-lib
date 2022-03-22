@@ -2,10 +2,10 @@ package generators
 
 import (
 	"bytes"
-	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"io/fs"
 
@@ -147,7 +147,7 @@ func (c *Generator) interpolateTemplate(templateName string) (string, error) {
 	}
 
 	parsedTemplate, err := template.New(filepath.Base(templateName)).
-		Funcs(sprig.HtmlFuncMap()).
+		Funcs(sprig.TxtFuncMap()).
 		Funcs(funcs).
 		ParseFS(c.dfs, templateName)
 	if err != nil {
