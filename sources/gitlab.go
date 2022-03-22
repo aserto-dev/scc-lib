@@ -401,25 +401,33 @@ func (g *gitlabSource) AddSecretToRepo(ctx context.Context, token *AccessToken, 
 
 	masked := true
 
-	opt := &gitlab.CreateProjectVariableOptions{
-		Key:       &secretName,
-		Value:     &value,
-		Masked:    &masked,
-		Protected: &masked,
+	hasSecret, err := g.hasSecret(client, orgName, repoName, secretName)
+	if err != nil {
+		return err
 	}
 
-	if !overrideSecret {
-		hasSecret, err := g.hasSecret(client, orgName, repoName, secretName)
-		if err != nil {
-			return err
-		}
-		if hasSecret {
-			return cerr.ErrRepoAlreadyConnected.Msg("you’re trying to link to an existing repository that already has a secret. Please consider overwriting the Aserto push secret.").Str("repo", orgName+"/"+repoName)
-		}
+	if !overrideSecret && hasSecret {
+		return cerr.ErrRepoAlreadyConnected.Msg("you're trying to link to an existing repository that already has a secret. Please consider overwriting the Aserto push secret.").Str("repo", orgName+"/"+repoName)
 	}
 
 	repo := orgName + "/" + repoName
-	_, _, err = client.ProjectVariables.CreateVariable(repo, opt)
+
+	if hasSecret {
+		opt := &gitlab.UpdateProjectVariableOptions{
+			Value:     &value,
+			Masked:    &masked,
+			Protected: &masked,
+		}
+		_, _, err = client.ProjectVariables.UpdateVariable(repo, secretName, opt)
+	} else {
+		opt := &gitlab.CreateProjectVariableOptions{
+			Key:       &secretName,
+			Value:     &value,
+			Masked:    &masked,
+			Protected: &masked,
+		}
+		_, _, err = client.ProjectVariables.CreateVariable(repo, opt)
+	}
 
 	return err
 }
@@ -432,10 +440,13 @@ func (g *gitlabSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 	}
 
 	var actions []*gitlab.CommitActionOptions
+
+	repo := commit.Owner + "/" + commit.Repo
+
 	for filePath, content := range commit.Content {
 		act := gitlab.FileUpdate
 
-		_, _, err := client.RepositoryFiles.GetFile(commit.Repo, filePath, &gitlab.GetFileOptions{Ref: &commit.Branch})
+		_, _, err := client.RepositoryFiles.GetFile(repo, filePath, &gitlab.GetFileOptions{Ref: &commit.Branch})
 
 		if err != nil {
 			act = gitlab.FileCreate
@@ -455,7 +466,6 @@ func (g *gitlabSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 		CommitMessage: &commit.Message,
 		Actions:       actions,
 	}
-	repo := commit.Owner + "/" + commit.Repo
 
 	_, _, err = client.Commits.CreateCommit(repo, opt)
 
