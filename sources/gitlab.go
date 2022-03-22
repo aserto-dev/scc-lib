@@ -116,9 +116,12 @@ func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 		return orgs, nil, errors.Wrap(err, "failed to create Gitlab client")
 	}
 
-	pageToRead, err := strconv.Atoi(page.Token)
-	if err != nil {
-		return orgs, nil, err
+	pageToRead := 0
+	if strings.TrimSpace(page.Token) != "" {
+		pageToRead, err = strconv.Atoi(page.Token)
+		if err != nil {
+			return orgs, nil, err
+		}
 	}
 
 	accessLevel := gitlab.DeveloperPermissions
@@ -182,9 +185,13 @@ func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 		return repos, nil, errors.Wrap(err, "failed to create Gitlab client")
 	}
 
-	pageToRead, err := strconv.Atoi(page.Token)
-	if err != nil {
-		return repos, nil, err
+	pageToRead := 0
+
+	if strings.TrimSpace(page.Token) != "" {
+		pageToRead, err = strconv.Atoi(page.Token)
+		if err != nil {
+			return repos, nil, err
+		}
 	}
 
 	opt := &gitlab.ListProjectsOptions{
