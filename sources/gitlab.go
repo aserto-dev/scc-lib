@@ -60,34 +60,26 @@ func (g *gitlabSource) Profile(ctx context.Context, accessToken *AccessToken) (s
 	}
 
 	username := user.Username
-	member := true
-	// https://docs.gitlab.com/ee/api/members.html#valid-access-levels
-	accessLevel := gitlab.DeveloperPermissions
 
 	opt := &gitlab.ListProjectsOptions{
-		ListOptions:    gitlab.ListOptions{},
-		Membership:     &member,
-		MinAccessLevel: &accessLevel,
+		ListOptions: gitlab.ListOptions{},
 	}
 
 	for {
-		projects, resp, err := client.Projects.ListProjects(opt)
-
+		projects, resp, err := client.Projects.ListUserProjects(username, opt)
 		if err != nil {
 			return "", repos, err
 		}
 
 		for _, proj := range projects {
-			owner := ""
-
-			if proj.Owner != nil {
-				owner = proj.Owner.Name
+			// Only add the projects that are owned by the current user.
+			if proj.Owner == nil || proj.Owner.Username != username {
+				continue
 			}
-
 			repos = append(repos, &scc.Repo{
 				Name: proj.Name,
-				Org:  owner,
-				Url:  proj.HTTPURLToRepo,
+				Org:  proj.Owner.Username,
+				Url:  proj.WebURL,
 			})
 		}
 
@@ -171,7 +163,7 @@ func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 	return orgs, response, nil
 }
 
-func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, owner string, page *api.PaginationRequest) ([]*scc.Repo, *api.PaginationResponse, error) {
+func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, org string, page *api.PaginationRequest) ([]*scc.Repo, *api.PaginationResponse, error) {
 	if page == nil {
 		return nil, nil, errors.New("page must not be empty")
 	}
@@ -194,7 +186,7 @@ func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 		}
 	}
 
-	opt := &gitlab.ListProjectsOptions{
+	opt := &gitlab.ListGroupProjectsOptions{
 		ListOptions: gitlab.ListOptions{
 			PerPage: int(page.Size),
 			Page:    pageToRead,
@@ -206,8 +198,7 @@ func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 	}
 
 	for {
-		projects, resp, err := client.Projects.ListUserProjects(owner, opt)
-
+		projects, resp, err := client.Groups.ListGroupProjects(org, opt)
 		if err != nil {
 			return repos, nil, err
 		}
@@ -215,8 +206,8 @@ func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 		for _, proj := range projects {
 			repos = append(repos, &scc.Repo{
 				Name: proj.Name,
-				Org:  proj.Owner.Name,
-				Url:  proj.HTTPURLToRepo,
+				Org:  org,
+				Url:  proj.WebURL,
 			})
 		}
 
