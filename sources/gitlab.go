@@ -243,46 +243,28 @@ func (g *gitlabSource) GetRepo(ctx context.Context, accessToken *AccessToken, ow
 }
 
 func (g *gitlabSource) getSccRepoWithGitlabProj(accessToken *AccessToken, owner, repo string) (*scc.Repo, *gitlab.Project, error) {
-	var searchedProj *gitlab.Project
 	client, err := gitlab.NewClient(accessToken.Token)
 
 	if err != nil {
-		return nil, searchedProj, errors.Wrap(err, "failed to create Gitlab client")
+		return nil, nil, errors.Wrap(err, "failed to create Gitlab client")
 	}
 
 	var resultRepo *scc.Repo
 
-	opt := &gitlab.ListProjectsOptions{
-		ListOptions: gitlab.ListOptions{},
+	repoName := owner + "/" + repo
+
+	proj, _, err := client.Projects.GetProject(repoName, nil)
+	if err != nil {
+		return resultRepo, nil, errors.Wrapf(err, "failed to get project: %s", repoName)
 	}
 
-	for {
-		projects, resp, err := client.Projects.ListUserProjects(owner, opt)
-
-		if err != nil {
-			return resultRepo, searchedProj, err
-		}
-
-		for _, proj := range projects {
-			if proj.Name == repo {
-				resultRepo = &scc.Repo{
-					Name: proj.Name,
-					Org:  proj.Owner.Name,
-					Url:  proj.HTTPURLToRepo,
-				}
-				searchedProj = proj
-				break
-			}
-		}
-
-		if resp.NextPage == 0 || resultRepo != nil {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	resultRepo = &scc.Repo{
+		Name: proj.Name,
+		Org:  owner,
+		Url:  proj.WebURL,
 	}
 
-	return resultRepo, searchedProj, nil
+	return resultRepo, proj, nil
 }
 
 func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken, owner, name string, commit *Commit) error {
@@ -471,16 +453,9 @@ func (g *gitlabSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 }
 
 func (g *gitlabSource) GetDefaultBranch(ctx context.Context, accessToken *AccessToken, owner, repo string) (string, error) {
-	client, err := gitlab.NewClient(accessToken.Token)
+	_, proj, err := g.getSccRepoWithGitlabProj(accessToken, owner, repo)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create Gitlab client")
-	}
-
-	repoName := owner + "/" + repo
-
-	proj, _, err := client.Projects.GetProject(repoName, nil)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to get project: %s", repoName)
+		return "", err
 	}
 
 	return proj.DefaultBranch, nil
