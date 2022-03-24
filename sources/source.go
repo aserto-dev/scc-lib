@@ -34,7 +34,7 @@ type Source interface {
 	Profile(ctx context.Context, accessToken *AccessToken) (string, []*scc.Repo, error)
 	ListOrgs(ctx context.Context, accessToken *AccessToken, page *api.PaginationRequest) ([]string, *api.PaginationResponse, error)
 	ListRepos(ctx context.Context, accessToken *AccessToken, owner string, page *api.PaginationRequest) ([]*scc.Repo, *api.PaginationResponse, error)
-	CreateRepo(ctx context.Context, accessToken *AccessToken, owner, name string, commit *Commit) error
+	CreateRepo(ctx context.Context, accessToken *AccessToken, owner, name string) error
 	GetRepo(ctx context.Context, accessToken *AccessToken, owner, repo string) (*scc.Repo, error)
 	HasSecret(ctx context.Context, token *AccessToken, owner, repo, secretName string) (bool, error)
 	AddSecretToRepo(ctx context.Context, token *AccessToken, orgName, repoName, secretName, value string, overrideSecret bool) error
