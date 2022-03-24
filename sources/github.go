@@ -633,6 +633,26 @@ func (g *githubSource) hasSecret(ctx context.Context, githubClient *github.Clien
 	return false, nil
 }
 
+func (g *githubSource) GetDefaultBranch(ctx context.Context, accessToken *AccessToken, owner, repo string) (string, error) {
+
+	tokenSource := oauth2.StaticTokenSource(
+		&oauth2.Token{
+			AccessToken: accessToken.Token,
+			TokenType:   accessToken.Type,
+		},
+	)
+	clientWithToken := oauth2.NewClient(ctx, tokenSource)
+
+	githubClient := github.NewClient(clientWithToken)
+
+	gitRepo, _, err := githubClient.Repositories.Get(ctx, owner, repo)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get repo")
+	}
+
+	return *gitRepo.DefaultBranch, nil
+}
+
 func encryptSecretWithPublicKey(publicKey *github.PublicKey, secretValue string) (string, error) {
 	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey.GetKey())
 	if err != nil {

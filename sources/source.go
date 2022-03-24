@@ -40,4 +40,5 @@ type Source interface {
 	AddSecretToRepo(ctx context.Context, token *AccessToken, orgName, repoName, secretName, value string, overrideSecret bool) error
 	InitialTag(ctx context.Context, accessToken *AccessToken, fullName string) error
 	CreateCommitOnBranch(ctx context.Context, accessToken *AccessToken, commit *Commit) error
+	GetDefaultBranch(ctx context.Context, accessToken *AccessToken, owner, repo string) (string, error)
 }

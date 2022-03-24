@@ -469,3 +469,19 @@ func (g *gitlabSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 
 	return err
 }
+
+func (g *gitlabSource) GetDefaultBranch(ctx context.Context, accessToken *AccessToken, owner, repo string) (string, error) {
+	client, err := gitlab.NewClient(accessToken.Token)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create Gitlab client")
+	}
+
+	repoName := owner + "/" + repo
+
+	proj, _, err := client.Projects.GetProject(repoName, nil)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to get project: %s", repoName)
+	}
+
+	return proj.DefaultBranch, nil
+}
