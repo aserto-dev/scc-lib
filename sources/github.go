@@ -407,7 +407,7 @@ func (g *githubSource) GetRepo(ctx context.Context, accessToken *AccessToken, ow
 	return result, err
 }
 
-func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken, owner, name string, commit *Commit) error { // nolint // code is readable, would be less readable if refactored
+func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken, owner, name string) error {
 	tokenSource := oauth2.StaticTokenSource(
 		&oauth2.Token{
 			AccessToken: accessToken.Token,
@@ -432,13 +432,6 @@ func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to create repo")
-	}
-
-	if commit != nil {
-		err := g.CreateCommitOnBranch(ctx, accessToken, commit)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil

@@ -267,7 +267,7 @@ func (g *gitlabSource) getSccRepoWithGitlabProj(accessToken *AccessToken, owner,
 	return resultRepo, proj, nil
 }
 
-func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken, owner, name string, commit *Commit) error {
+func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken, owner, name string) error {
 	client, err := gitlab.NewClient(accessToken.Token)
 
 	if err != nil {
@@ -296,16 +296,6 @@ func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 	}
 
 	_, _, err = client.ProtectedTags.ProtectRepositoryTags(owner+"/"+name, protectedTagOpt)
-	if err != nil {
-		return err
-	}
-
-	if commit != nil {
-		err := g.CreateCommitOnBranch(ctx, accessToken, commit)
-		if err != nil {
-			return err
-		}
-	}
 
 	return err
 }
