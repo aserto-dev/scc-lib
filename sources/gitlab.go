@@ -136,7 +136,7 @@ func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 		}
 
 		for _, group := range groups {
-			orgs = append(orgs, group.Name)
+			orgs = append(orgs, group.Path)
 		}
 
 		response := &api.PaginationResponse{
@@ -276,9 +276,15 @@ func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 
 	visibility := gitlab.PublicVisibility
 
+	namespace, _, err := client.Namespaces.GetNamespace(owner)
+	if err != nil {
+		return err
+	}
+
 	opt := &gitlab.CreateProjectOptions{
-		Visibility: &visibility,
-		Name:       &name,
+		NamespaceID: &namespace.ID,
+		Visibility:  &visibility,
+		Name:        &name,
 	}
 
 	_, _, err = client.Projects.CreateProject(opt)
