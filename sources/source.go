@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	scc "github.com/aserto-dev/go-grpc/aserto/tenant/scc/v1"
@@ -30,7 +29,7 @@ type Commit struct {
 }
 
 type Source interface {
-	ValidateConnection(ctx context.Context, accessToken *AccessToken) (*http.Response, error)
+	ValidateConnection(ctx context.Context, accessToken *AccessToken) error
 	Profile(ctx context.Context, accessToken *AccessToken) (string, []*scc.Repo, error)
 	ListOrgs(ctx context.Context, accessToken *AccessToken, page *api.PaginationRequest) ([]string, *api.PaginationResponse, error)
 	ListRepos(ctx context.Context, accessToken *AccessToken, owner string, page *api.PaginationRequest) ([]*scc.Repo, *api.PaginationResponse, error)

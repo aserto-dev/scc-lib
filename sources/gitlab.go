@@ -33,17 +33,27 @@ func NewGitlab(log *zerolog.Logger, cfg *Config) Source {
 	}
 }
 
-func (g *gitlabSource) ValidateConnection(ctx context.Context, accessToken *AccessToken) (*http.Response, error) {
+func (g *gitlabSource) ValidateConnection(ctx context.Context, accessToken *AccessToken) error {
 	client, err := gitlab.NewClient(accessToken.Token)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create Gitlab client: %s", err.Error())
+		return errors.Wrapf(err, "failed to create Gitlab client: %s", err.Error())
 	}
 
 	_, response, err := client.Users.CurrentUser()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to connect to Gitlab: %s", err.Error())
+		return errors.Wrapf(err, "failed to connect to Gitlab: %s", err.Error())
 	}
-	return response.Response, nil
+
+	if response.StatusCode != http.StatusOK {
+		return cerr.ErrProviderVerification.
+			Str("status", response.Status).
+			Int("status-code", response.StatusCode).
+			FromReader("gitlab-response", response.Body).
+			Err(err).
+			Msgf("unexpected reply from Gitlab: %s", err.Error())
+	}
+
+	return nil
 }
 
 func (g *gitlabSource) Profile(ctx context.Context, accessToken *AccessToken) (string, []*scc.Repo, error) {
