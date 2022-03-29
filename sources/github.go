@@ -40,7 +40,7 @@ func NewGithub(log *zerolog.Logger, cfg *Config) Source {
 	}
 }
 
-func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *AccessToken) (*http.Response, error) {
+func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *AccessToken) error {
 	tokenSource := oauth2.StaticTokenSource(
 		&oauth2.Token{
 			AccessToken: accessToken.Token,
@@ -52,9 +52,19 @@ func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *Acce
 	githubClient := github.NewClient(clientWithToken)
 	_, response, err := githubClient.Users.Get(ctx, "")
 	if err != nil {
-		return response.Response, err
+		return err
 	}
-	return response.Response, nil
+
+	if response.StatusCode != http.StatusOK {
+		return cerr.ErrProviderVerification.
+			Str("status", response.Status).
+			Int("status-code", response.StatusCode).
+			FromReader("github-response", response.Body).
+			Err(err).
+			Msgf("unexpected reply from GitHub: %s", err.Error())
+	}
+
+	return nil
 }
 
 // Profile returns the username of the user that owns the token, and its associated repos
