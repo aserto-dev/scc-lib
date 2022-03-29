@@ -75,7 +75,7 @@ func (g *githubSource) Profile(ctx context.Context, accessToken *AccessToken) (s
 			TokenType:   accessToken.Type,
 		},
 	)
-	httpClient := oauth2.NewClient(context.Background(), src)
+	httpClient := oauth2.NewClient(ctx, src)
 	client := graphql.NewClient("https://api.github.com/graphql", httpClient)
 
 	repos := []*scc.Repo{}
@@ -223,7 +223,7 @@ func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 			TokenType:   accessToken.Type,
 		},
 	)
-	httpClient := oauth2.NewClient(context.Background(), src)
+	httpClient := oauth2.NewClient(ctx, src)
 	client := graphql.NewClient("https://api.github.com/graphql", httpClient)
 
 	var result []*api.SccOrg
@@ -317,7 +317,7 @@ func (g *githubSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 			TokenType:   accessToken.Type,
 		},
 	)
-	httpClient := oauth2.NewClient(context.Background(), src)
+	httpClient := oauth2.NewClient(ctx, src)
 	client := graphql.NewClient("https://api.github.com/graphql", httpClient)
 
 	var query struct {
