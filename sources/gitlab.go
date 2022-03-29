@@ -200,19 +200,44 @@ func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 		}
 	}
 
-	opt := &gitlab.ListGroupProjectsOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: int(page.Size),
-			Page:    pageToRead,
-		},
+	user, _, err := client.Users.CurrentUser()
+	if err != nil {
+		return repos, nil, err
 	}
 
-	if page.Size == -1 {
-		opt.ListOptions.PerPage = 100
+	pageSize := int(page.Size)
+
+	listOpt := gitlab.ListOptions{PerPage: pageSize, Page: pageToRead}
+
+	if pageSize == -1 {
+		listOpt.PerPage = 100
 	}
+
+	if org == user.Username {
+		opt := &gitlab.ListProjectsOptions{ListOptions: listOpt}
+		return g.listPagedRepos(
+			org, pageSize,
+			func() ([]*gitlab.Project, *gitlab.Response, error) {
+				return client.Projects.ListUserProjects(org, opt)
+			}, &listOpt)
+	}
+	opt := &gitlab.ListGroupProjectsOptions{ListOptions: listOpt}
+	return g.listPagedRepos(
+		org, pageSize, func() ([]*gitlab.Project, *gitlab.Response, error) {
+			return client.Groups.ListGroupProjects(org, opt)
+		}, &listOpt)
+}
+
+func (g *gitlabSource) listPagedRepos(
+	user string,
+	pageSize int,
+	lpFunc func() ([]*gitlab.Project, *gitlab.Response, error),
+	opt *gitlab.ListOptions,
+) ([]*scc.Repo, *api.PaginationResponse, error) {
+	repos := []*scc.Repo{}
 
 	for {
-		projects, resp, err := client.Groups.ListGroupProjects(org, opt)
+		projects, resp, err := lpFunc()
 		if err != nil {
 			return repos, nil, err
 		}
@@ -220,7 +245,7 @@ func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 		for _, proj := range projects {
 			repos = append(repos, &scc.Repo{
 				Name: proj.Name,
-				Org:  org,
+				Org:  user,
 				Url:  proj.WebURL,
 			})
 		}
@@ -231,14 +256,14 @@ func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 			TotalSize:  int32(resp.TotalItems),
 		}
 
-		if page.Size != -1 {
+		if pageSize != -1 {
 			return repos, response, nil
 		}
 		if resp.NextPage == 0 {
 			break
 		}
 
-		opt.ListOptions.Page = resp.NextPage
+		opt.Page = resp.NextPage
 	}
 
 	response := &api.PaginationResponse{
