@@ -103,7 +103,7 @@ func (g *gitlabSource) Profile(ctx context.Context, accessToken *AccessToken) (s
 	return username, repos, nil
 }
 
-func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, page *api.PaginationRequest) ([]string, *api.PaginationResponse, error) {
+func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, page *api.PaginationRequest) ([]*api.SccOrg, *api.PaginationResponse, error) {
 	if page == nil {
 		return nil, nil, errors.New("page must not be empty")
 	}
@@ -111,7 +111,7 @@ func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 		return nil, nil, errors.New("page size must be >= -1 and <= 100")
 	}
 
-	var orgs []string
+	var orgs []*api.SccOrg
 	client, err := gitlab.NewClient(accessToken.Token)
 
 	if err != nil {
@@ -146,7 +146,11 @@ func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 		}
 
 		for _, group := range groups {
-			orgs = append(orgs, group.Path)
+			org := &api.SccOrg{
+				Name: group.Name,
+				Id:   group.Path,
+			}
+			orgs = append(orgs, org)
 		}
 
 		response := &api.PaginationResponse{

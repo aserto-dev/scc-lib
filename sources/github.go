@@ -213,7 +213,7 @@ func (g *githubSource) AddSecretToRepo(ctx context.Context, accessToken *AccessT
 }
 
 // ListOrgs lists all orgs the user is a part of
-func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, page *api.PaginationRequest) ([]string, *api.PaginationResponse, error) {
+func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, page *api.PaginationRequest) ([]*api.SccOrg, *api.PaginationResponse, error) {
 	if page == nil {
 		return nil, nil, errors.New("page must not be empty")
 	}
@@ -226,7 +226,7 @@ func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 	httpClient := oauth2.NewClient(context.Background(), src)
 	client := graphql.NewClient("https://api.github.com/graphql", httpClient)
 
-	result := []string{}
+	var result []*api.SccOrg
 
 	var query struct {
 		Viewer struct {
@@ -268,7 +268,12 @@ func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 		}
 
 		for _, o := range query.Viewer.Organizations.Nodes {
-			result = append(result, string(o.Login))
+			org := string(o.Login)
+			sccOrg := &api.SccOrg{
+				Name: org,
+				Id:   org,
+			}
+			result = append(result, sccOrg)
 		}
 
 		resp := &api.PaginationResponse{

@@ -2,9 +2,11 @@ module github.com/aserto-dev/scc-lib
 
 go 1.17
 
+// replace github.com/aserto-dev/go-grpc => ../go-grpc
+
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/aserto-dev/go-grpc v0.8.6
+	github.com/aserto-dev/go-grpc v0.8.8
 	github.com/aserto-dev/go-utils v0.8.3
 	github.com/aserto-dev/mage-loot v0.8.0
 	github.com/friendsofgo/errors v0.9.2
