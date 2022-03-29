@@ -31,7 +31,7 @@ type Commit struct {
 type Source interface {
 	ValidateConnection(ctx context.Context, accessToken *AccessToken) error
 	Profile(ctx context.Context, accessToken *AccessToken) (string, []*scc.Repo, error)
-	ListOrgs(ctx context.Context, accessToken *AccessToken, page *api.PaginationRequest) ([]string, *api.PaginationResponse, error)
+	ListOrgs(ctx context.Context, accessToken *AccessToken, page *api.PaginationRequest) ([]*api.SccOrg, *api.PaginationResponse, error)
 	ListRepos(ctx context.Context, accessToken *AccessToken, owner string, page *api.PaginationRequest) ([]*scc.Repo, *api.PaginationResponse, error)
 	CreateRepo(ctx context.Context, accessToken *AccessToken, owner, name string) error
 	GetRepo(ctx context.Context, accessToken *AccessToken, owner, repo string) (*scc.Repo, error)
