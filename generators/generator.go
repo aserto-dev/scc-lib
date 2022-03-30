@@ -86,7 +86,7 @@ func (c *Generator) Generate(pathToTemplates string, overwrite bool) error {
 		}
 
 		// create directories path
-		baseDir := strings.TrimSuffix(fileName, filepath.Base(fileName))
+		baseDir := filepath.Dir(fileName)
 		err = os.MkdirAll(baseDir, 0755)
 		if err != nil {
 			return errors.Wrapf(err, "create directory '%s'", baseDir)
