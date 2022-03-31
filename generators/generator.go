@@ -27,10 +27,7 @@ func NewGenerator(cfg *Config, log *zerolog.Logger, dfs fs.FS) (*Generator, erro
 	if log == nil {
 		return nil, errors.New("no logger variable provided")
 	}
-	err := cfg.validate()
-	if err != nil {
-		return nil, err
-	}
+
 	var files []string
 	_ = fs.WalkDir(dfs, ".", func(path string, d fs.DirEntry, err error) error {
 		if d.IsDir() {
