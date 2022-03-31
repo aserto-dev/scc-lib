@@ -19,22 +19,6 @@ type Config struct {
 	User   string
 }
 
-func (c *Config) validate() error {
-	if c.Repo == "" {
-		return errors.New("a repo name must be provided")
-	}
-	if c.Server == "" {
-		return errors.New("a server name must be provided")
-	}
-	if c.User == "" {
-		return errors.New("a user name must be provided")
-	}
-	if c.Token == "" {
-		return errors.New("a token name must be provided")
-	}
-	return nil
-}
-
 func IsGitRepo(path string) error {
 	if exist, err := DirExist(filepath.Join(path, gitDir)); !exist {
 		return errors.Wrapf(err, "root path does not contain .git directory '%s'", path)
