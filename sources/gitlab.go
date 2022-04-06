@@ -17,31 +17,24 @@ import (
 
 var _ Source = &gitlabSource{}
 
+type glIntr func(token string) (GitlabIntr, error)
+
 // gitlabSource deals with source management on gitlab.com
 type gitlabSource struct {
-	logger *zerolog.Logger
-	cfg    *Config
-}
-
-// NewGitlab creates a new Gitlab
-func NewGitlab(log *zerolog.Logger, cfg *Config) Source {
-	glLogger := log.With().Str("component", "gitlab-provider").Logger()
-
-	return &gitlabSource{
-		cfg:    cfg,
-		logger: &glLogger,
-	}
+	logger           *zerolog.Logger
+	cfg              *Config
+	interactionsFunc glIntr
 }
 
 func (g *gitlabSource) ValidateConnection(ctx context.Context, accessToken *AccessToken) error {
-	client, err := gitlab.NewClient(accessToken.Token)
+	client, err := g.interactionsFunc(accessToken.Token)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create Gitlab client: %s", err.Error())
+		return errors.Wrap(err, "failed to create Gitlab client")
 	}
 
-	_, response, err := client.Users.CurrentUser()
+	_, response, err := client.CurrentUser()
 	if err != nil {
-		return errors.Wrapf(err, "failed to connect to Gitlab: %s", err.Error())
+		return errors.Wrapf(err, "failed to connect to Gitlab")
 	}
 
 	if response.StatusCode != http.StatusOK {
@@ -49,7 +42,7 @@ func (g *gitlabSource) ValidateConnection(ctx context.Context, accessToken *Acce
 			Str("status", response.Status).
 			Int("status-code", response.StatusCode).
 			FromReader("gitlab-response", response.Body).
-			Msg("unexpected reply from GitHub")
+			Msg("unexpected reply from Gitlab")
 	}
 
 	return nil
@@ -57,13 +50,13 @@ func (g *gitlabSource) ValidateConnection(ctx context.Context, accessToken *Acce
 
 func (g *gitlabSource) Profile(ctx context.Context, accessToken *AccessToken) (string, []*scc.Repo, error) {
 	repos := []*scc.Repo{}
-	client, err := gitlab.NewClient(accessToken.Token)
+	client, err := g.interactionsFunc(accessToken.Token)
 
 	if err != nil {
 		return "", repos, errors.Wrap(err, "failed to create Gitlab client")
 	}
 
-	user, _, err := client.Users.CurrentUser()
+	user, _, err := client.CurrentUser()
 	if err != nil {
 		return "", repos, err
 	}
@@ -75,13 +68,13 @@ func (g *gitlabSource) Profile(ctx context.Context, accessToken *AccessToken) (s
 	}
 
 	for {
-		projects, resp, err := client.Projects.ListUserProjects(username, opt)
+		projects, resp, err := client.ListUserProjects(username, opt)
 		if err != nil {
 			return "", repos, err
 		}
 
 		for _, proj := range projects {
-			// Only add the projects that are owned by the current user.
+			// Only add the projects that are owned by the current user.go tool cover -html=coverage.out -o coverage.html
 			if proj.Owner == nil || proj.Owner.Username != username {
 				continue
 			}
@@ -111,7 +104,7 @@ func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 	}
 
 	var orgs []*api.SccOrg
-	client, err := gitlab.NewClient(accessToken.Token)
+	client, err := g.interactionsFunc(accessToken.Token)
 
 	if err != nil {
 		return orgs, nil, errors.Wrap(err, "failed to create Gitlab client")
@@ -121,7 +114,7 @@ func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 	if strings.TrimSpace(page.Token) != "" {
 		pageToRead, err = strconv.Atoi(page.Token)
 		if err != nil {
-			return orgs, nil, err
+			return orgs, nil, errors.Wrap(err, "page token must be int")
 		}
 	}
 
@@ -139,7 +132,7 @@ func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 
 	for {
 
-		groups, resp, err := client.Groups.ListGroups(opt)
+		groups, resp, err := client.ListGroups(opt)
 		if err != nil {
 			return orgs, nil, err
 		}
@@ -184,7 +177,7 @@ func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 		return nil, nil, errors.New("page size must be >= -1 and <= 100")
 	}
 	repos := []*scc.Repo{}
-	client, err := gitlab.NewClient(accessToken.Token)
+	client, err := g.interactionsFunc(accessToken.Token)
 
 	if err != nil {
 		return repos, nil, errors.Wrap(err, "failed to create Gitlab client")
@@ -195,11 +188,11 @@ func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 	if strings.TrimSpace(page.Token) != "" {
 		pageToRead, err = strconv.Atoi(page.Token)
 		if err != nil {
-			return repos, nil, err
+			return repos, nil, errors.Wrap(err, "page token must be int")
 		}
 	}
 
-	user, _, err := client.Users.CurrentUser()
+	user, _, err := client.CurrentUser()
 	if err != nil {
 		return repos, nil, err
 	}
@@ -217,13 +210,13 @@ func (g *gitlabSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 		return g.listPagedRepos(
 			org, pageSize,
 			func() ([]*gitlab.Project, *gitlab.Response, error) {
-				return client.Projects.ListUserProjects(org, opt)
+				return client.ListUserProjects(org, opt)
 			}, &listOpt)
 	}
 	opt := &gitlab.ListGroupProjectsOptions{ListOptions: listOpt}
 	return g.listPagedRepos(
 		org, pageSize, func() ([]*gitlab.Project, *gitlab.Response, error) {
-			return client.Groups.ListGroupProjects(org, opt)
+			return client.ListGroupProjects(org, opt)
 		}, &listOpt)
 }
 
@@ -281,7 +274,7 @@ func (g *gitlabSource) GetRepo(ctx context.Context, accessToken *AccessToken, ow
 }
 
 func (g *gitlabSource) getSccRepoWithGitlabProj(accessToken *AccessToken, owner, repo string) (*scc.Repo, *gitlab.Project, error) {
-	client, err := gitlab.NewClient(accessToken.Token)
+	client, err := g.interactionsFunc(accessToken.Token)
 
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create Gitlab client")
@@ -291,7 +284,7 @@ func (g *gitlabSource) getSccRepoWithGitlabProj(accessToken *AccessToken, owner,
 
 	repoName := owner + "/" + repo
 
-	proj, _, err := client.Projects.GetProject(repoName, nil)
+	proj, _, err := client.GetProject(repoName)
 	if err != nil {
 		return resultRepo, nil, errors.Wrapf(err, "failed to get project: %s", repoName)
 	}
@@ -306,7 +299,7 @@ func (g *gitlabSource) getSccRepoWithGitlabProj(accessToken *AccessToken, owner,
 }
 
 func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken, owner, name string) error {
-	client, err := gitlab.NewClient(accessToken.Token)
+	client, err := g.interactionsFunc(accessToken.Token)
 
 	if err != nil {
 		return errors.Wrap(err, "failed to create Gitlab client")
@@ -314,7 +307,7 @@ func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 
 	visibility := gitlab.PublicVisibility
 
-	namespace, _, err := client.Namespaces.GetNamespace(owner)
+	namespace, err := client.GetNamespace(owner)
 	if err != nil {
 		return err
 	}
@@ -325,7 +318,7 @@ func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 		Name:        &name,
 	}
 
-	_, _, err = client.Projects.CreateProject(opt)
+	err = client.CreateProject(opt)
 
 	if err != nil {
 		return err
@@ -339,13 +332,13 @@ func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 		CreateAccessLevel: &permission,
 	}
 
-	_, _, err = client.ProtectedTags.ProtectRepositoryTags(owner+"/"+name, protectedTagOpt)
+	err = client.ProtectRepositoryTags(owner+"/"+name, protectedTagOpt)
 
 	return err
 }
 
 func (g *gitlabSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName string) error {
-	client, err := gitlab.NewClient(accessToken.Token)
+	client, err := g.interactionsFunc(accessToken.Token)
 
 	if err != nil {
 		return errors.Wrap(err, "failed to create Gitlab client")
@@ -375,13 +368,13 @@ func (g *gitlabSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 		Message: &defaultTag,
 	}
 
-	_, _, err = client.Tags.CreateTag(proj.ID, opt)
+	err = client.CreateTag(proj.ID, opt)
 
 	return err
 }
 
-func (g *gitlabSource) hasSecret(client *gitlab.Client, orgName, repoName, secretName string) (bool, error) {
-	variable, resp, err := client.ProjectVariables.GetVariable(orgName+"/"+repoName, secretName, nil)
+func (g *gitlabSource) hasSecret(client GitlabIntr, orgName, repoName, secretName string) (bool, error) {
+	variable, resp, err := client.GetProjectVariable(orgName+"/"+repoName, secretName)
 	if err != nil {
 		if resp != nil && resp.StatusCode == 404 {
 			return false, nil
@@ -397,7 +390,7 @@ func (g *gitlabSource) hasSecret(client *gitlab.Client, orgName, repoName, secre
 }
 
 func (g *gitlabSource) HasSecret(ctx context.Context, token *AccessToken, owner, repo, secretName string) (bool, error) {
-	client, err := gitlab.NewClient(token.Token)
+	client, err := g.interactionsFunc(token.Token)
 
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create Gitlab client")
@@ -407,7 +400,7 @@ func (g *gitlabSource) HasSecret(ctx context.Context, token *AccessToken, owner,
 }
 
 func (g *gitlabSource) AddSecretToRepo(ctx context.Context, token *AccessToken, orgName, repoName, secretName, value string, overrideSecret bool) error {
-	client, err := gitlab.NewClient(token.Token)
+	client, err := g.interactionsFunc(token.Token)
 
 	if err != nil {
 		return errors.Wrap(err, "failed to create Gitlab client")
@@ -432,7 +425,7 @@ func (g *gitlabSource) AddSecretToRepo(ctx context.Context, token *AccessToken, 
 			Masked:    &masked,
 			Protected: &masked,
 		}
-		_, _, err = client.ProjectVariables.UpdateVariable(repo, secretName, opt)
+		err = client.UpdateProjectVariable(repo, secretName, opt)
 	} else {
 		opt := &gitlab.CreateProjectVariableOptions{
 			Key:       &secretName,
@@ -440,14 +433,14 @@ func (g *gitlabSource) AddSecretToRepo(ctx context.Context, token *AccessToken, 
 			Masked:    &masked,
 			Protected: &masked,
 		}
-		_, _, err = client.ProjectVariables.CreateVariable(repo, opt)
+		err = client.CreateProjectVariable(repo, opt)
 	}
 
 	return err
 }
 
 func (g *gitlabSource) CreateCommitOnBranch(ctx context.Context, accessToken *AccessToken, commit *Commit) error {
-	client, err := gitlab.NewClient(accessToken.Token)
+	client, err := g.interactionsFunc(accessToken.Token)
 
 	if err != nil {
 		return errors.Wrap(err, "failed to create Gitlab client")
@@ -460,7 +453,7 @@ func (g *gitlabSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 	for filePath, content := range commit.Content {
 		act := gitlab.FileUpdate
 
-		_, _, err := client.RepositoryFiles.GetFile(repo, filePath, &gitlab.GetFileOptions{Ref: &commit.Branch})
+		err := client.GetProjectFile(repo, filePath, &gitlab.GetFileOptions{Ref: &commit.Branch})
 
 		if err != nil {
 			act = gitlab.FileCreate
@@ -481,7 +474,7 @@ func (g *gitlabSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 		Actions:       actions,
 	}
 
-	_, _, err = client.Commits.CreateCommit(repo, opt)
+	err = client.CreateCommit(repo, opt)
 
 	return err
 }

@@ -4,6 +4,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/aserto-dev/mage-loot/common"
 	"github.com/aserto-dev/mage-loot/deps"
@@ -24,6 +25,18 @@ func Deps() {
 // Lint runs linting for the entire project.
 func Lint() error {
 	return common.Lint()
+}
+
+func Generate() error {
+	return common.GenerateWith([]string{
+		filepath.Dir(deps.GoBinPath("mockgen")),
+		filepath.Dir(deps.GoBinPath("wire")),
+	})
+}
+
+// Test runs all tests and generates a code coverage report.
+func Test() error {
+	return common.Test()
 }
 
 // All runs all targets in the appropriate order.
