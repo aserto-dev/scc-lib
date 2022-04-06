@@ -60,8 +60,7 @@ func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *Acce
 			Str("status", response.Status).
 			Int("status-code", response.StatusCode).
 			FromReader("github-response", response.Body).
-			Err(err).
-			Msgf("unexpected reply from GitHub: %s", err.Error())
+			Msg("unexpected reply from GitHub")
 	}
 
 	return nil
