@@ -10,6 +10,7 @@ import (
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	scc "github.com/aserto-dev/go-grpc/aserto/tenant/scc/v1"
 	"github.com/aserto-dev/go-utils/cerr"
+	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/friendsofgo/errors"
 	"github.com/rs/zerolog"
 	"github.com/xanzy/go-gitlab"
@@ -17,13 +18,11 @@ import (
 
 var _ Source = &gitlabSource{}
 
-type glIntr func(token string) (GitlabIntr, error)
-
 // gitlabSource deals with source management on gitlab.com
 type gitlabSource struct {
 	logger           *zerolog.Logger
 	cfg              *Config
-	interactionsFunc glIntr
+	interactionsFunc interactions.GlIntr
 }
 
 func (g *gitlabSource) ValidateConnection(ctx context.Context, accessToken *AccessToken) error {
@@ -373,7 +372,7 @@ func (g *gitlabSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 	return err
 }
 
-func (g *gitlabSource) hasSecret(client GitlabIntr, orgName, repoName, secretName string) (bool, error) {
+func (g *gitlabSource) hasSecret(client interactions.GitlabIntr, orgName, repoName, secretName string) (bool, error) {
 	variable, resp, err := client.GetProjectVariable(orgName+"/"+repoName, secretName)
 	if err != nil {
 		if resp != nil && resp.StatusCode == 404 {

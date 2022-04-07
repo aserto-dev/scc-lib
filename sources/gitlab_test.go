@@ -9,6 +9,7 @@ import (
 
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/aserto-dev/go-utils/cerr"
+	"github.com/aserto-dev/scc-lib/internal/interactions"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -16,7 +17,7 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
-var mockIntr *MockGitlabIntr
+var mockIntr *interactions.MockGitlabIntr
 
 const (
 	repo        = "policy"
@@ -27,11 +28,11 @@ const (
 func init() {
 	t := &testing.T{}
 	ctrl := gomock.NewController(t)
-	mockIntr = NewMockGitlabIntr(ctrl)
+	mockIntr = interactions.NewMockGitlabIntr(ctrl)
 }
 
-func newMockIntrFunc(ctrl *gomock.Controller) glIntr {
-	return func(token string) (GitlabIntr, error) {
+func newMockIntrFunc(ctrl *gomock.Controller) interactions.GlIntr {
+	return func(token string) (interactions.GitlabIntr, error) {
 		if token == "" {
 			return nil, errors.New("Kaboom")
 		}
@@ -39,7 +40,7 @@ func newMockIntrFunc(ctrl *gomock.Controller) glIntr {
 	}
 }
 
-func TestConstructor(t *testing.T) {
+func TestMockConstructor(t *testing.T) {
 	// Arrange
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
@@ -50,6 +51,20 @@ func TestConstructor(t *testing.T) {
 
 	// Assert
 	assert.NotNil(p)
+}
+
+func TestConstructor(t *testing.T) {
+	// Arrange
+	assert := require.New(t)
+	p := NewGitlab(&zerolog.Logger{}, &Config{})
+	token := &AccessToken{Token: ""}
+
+	// Act
+	err := p.ValidateConnection(context.Background(), token)
+
+	// Assert
+	assert.Error(err)
+	assert.Contains(err.Error(), "GET https://gitlab.com/api/v4/user: 401 {message: 401 Unauthorized}")
 }
 
 func TestValidateConnectionWithEmptyToken(t *testing.T) {

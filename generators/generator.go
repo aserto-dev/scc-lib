@@ -16,14 +16,19 @@ import (
 
 type GeneratedFilesContent map[string]string
 
-type Generator struct {
+type Generator interface {
+	GenerateFilesContent() (GeneratedFilesContent, error)
+	Generate(pathToTemplates string, overwrite bool) error
+}
+
+type generatorImpl struct {
 	cfg    *Config
 	files  []string
 	logger *zerolog.Logger
 	dfs    fs.FS
 }
 
-func NewGenerator(cfg *Config, log *zerolog.Logger, dfs fs.FS) (*Generator, error) {
+func NewGenerator(cfg *Config, log *zerolog.Logger, dfs fs.FS) (Generator, error) {
 	if log == nil {
 		return nil, errors.New("no logger variable provided")
 	}
@@ -37,7 +42,7 @@ func NewGenerator(cfg *Config, log *zerolog.Logger, dfs fs.FS) (*Generator, erro
 		files = append(files, path)
 		return nil
 	})
-	return &Generator{
+	return &generatorImpl{
 		cfg:    cfg,
 		files:  files,
 		dfs:    dfs,
@@ -45,7 +50,7 @@ func NewGenerator(cfg *Config, log *zerolog.Logger, dfs fs.FS) (*Generator, erro
 	}, nil
 }
 
-func (c *Generator) GenerateFilesContent() (GeneratedFilesContent, error) {
+func (c *generatorImpl) GenerateFilesContent() (GeneratedFilesContent, error) {
 	result := make(GeneratedFilesContent)
 
 	for _, file := range c.files {
@@ -68,7 +73,7 @@ func (c *Generator) GenerateFilesContent() (GeneratedFilesContent, error) {
 	return result, nil
 }
 
-func (c *Generator) Generate(pathToTemplates string, overwrite bool) error {
+func (c *generatorImpl) Generate(pathToTemplates string, overwrite bool) error {
 	for _, file := range c.files {
 		fileName := filepath.Join(pathToTemplates, strings.TrimSuffix(file, ".tmpl"))
 
@@ -112,7 +117,7 @@ func (c *Generator) Generate(pathToTemplates string, overwrite bool) error {
 	return nil
 }
 
-func (c *Generator) writeContentToFile(filePath, content string) error {
+func (c *generatorImpl) writeContentToFile(filePath, content string) error {
 	w, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return errors.Wrapf(err, "open file '%s'", filePath)
@@ -127,7 +132,7 @@ func (c *Generator) writeContentToFile(filePath, content string) error {
 	return nil
 }
 
-func (c *Generator) interpolateTemplate(templateName string) (string, error) {
+func (c *generatorImpl) interpolateTemplate(templateName string) (string, error) {
 	funcs := template.FuncMap{
 		"server": func() string {
 			return c.cfg.Server

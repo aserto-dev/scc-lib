@@ -1,11 +1,13 @@
-package sources
+package interactions
 
 import (
 	"github.com/pkg/errors"
 	"github.com/xanzy/go-gitlab"
 )
 
-//go:generate mockgen -source=gitlabintr.go -destination=mock_gitlabintr.go -package=sources --build_flags=--mod=mod
+//go:generate mockgen -source=gitlabintr.go -destination=mock_gitlabintr.go -package=interactions --build_flags=--mod=mod
+
+type GlIntr func(token string) (GitlabIntr, error)
 
 type GitlabIntr interface {
 	// GetClient(token string) (GitlabIntr, error)
@@ -29,7 +31,7 @@ type gitlabInteraction struct {
 	Client *gitlab.Client
 }
 
-func newGitlabInteraction() glIntr {
+func NewGitlabInteraction() GlIntr {
 	return func(token string) (GitlabIntr, error) {
 		client, err := gitlab.NewClient(token)
 

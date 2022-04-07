@@ -7,6 +7,7 @@
 package sources
 
 import (
+	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/golang/mock/gomock"
 	"github.com/rs/zerolog"
 )
@@ -14,16 +15,38 @@ import (
 // Injectors from wire.go:
 
 func NewGitlab(log *zerolog.Logger, cfg *Config) Source {
-	sourcesGlIntr := newGitlabInteraction()
+	glIntr := interactions.NewGitlabInteraction()
 	sourcesGitlabSource := &gitlabSource{
 		logger:           log,
 		cfg:              cfg,
-		interactionsFunc: sourcesGlIntr,
+		interactionsFunc: glIntr,
 	}
 	return sourcesGitlabSource
 }
 
-func NewTestGitlab(ctrl *gomock.Controller, log *zerolog.Logger, cfg *Config, pager glIntr) Source {
+func NewGithub(log *zerolog.Logger, cfg *Config) Source {
+	ghIntr := interactions.NewGithubInteraction()
+	graphQLIntr := interactions.NewGraphqInteraction()
+	sourcesGithubSource := &githubSource{
+		logger:           log,
+		cfg:              cfg,
+		interactionsFunc: ghIntr,
+		graphqlFunc:      graphQLIntr,
+	}
+	return sourcesGithubSource
+}
+
+func NewTestGithub(ctrl *gomock.Controller, log *zerolog.Logger, cfg *Config, pager interactions.GhIntr, graphql interactions.GraphQLIntr) Source {
+	sourcesGithubSource := &githubSource{
+		logger:           log,
+		cfg:              cfg,
+		interactionsFunc: pager,
+		graphqlFunc:      graphql,
+	}
+	return sourcesGithubSource
+}
+
+func NewTestGitlab(ctrl *gomock.Controller, log *zerolog.Logger, cfg *Config, pager interactions.GlIntr) Source {
 	sourcesGitlabSource := &gitlabSource{
 		logger:           log,
 		cfg:              cfg,
