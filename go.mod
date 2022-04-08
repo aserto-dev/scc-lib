@@ -4,6 +4,9 @@ go 1.17
 
 // replace github.com/aserto-dev/go-grpc => ../go-grpc
 
+// TODO: remove this replace once https://github.com/xanzy/go-gitlab/pull/1447 is merged
+replace github.com/xanzy/go-gitlab => github.com/oanatmaria/go-gitlab v0.62.1-0.20220408093027-4c1295c2c237
+
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/aserto-dev/go-grpc v0.8.8
