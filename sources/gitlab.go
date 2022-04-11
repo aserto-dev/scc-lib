@@ -25,7 +25,7 @@ type gitlabSource struct {
 	interactionsFunc interactions.GlIntr
 }
 
-func (g *gitlabSource) ValidateConnection(ctx context.Context, accessToken *AccessToken) error {
+func (g *gitlabSource) ValidateConnection(ctx context.Context, accessToken *AccessToken, requiredScopes []string) error {
 	client, err := g.interactionsFunc(accessToken.Token)
 	if err != nil {
 		return errors.Wrap(err, "failed to create Gitlab client")

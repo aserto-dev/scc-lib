@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -33,7 +34,7 @@ type githubSource struct {
 	graphqlFunc      interactions.GraphQLIntr
 }
 
-func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *AccessToken) error {
+func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *AccessToken, requiredScopes []string) error {
 	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
 
 	_, response, err := githubClient.GetUsers(ctx, "")
@@ -47,6 +48,31 @@ func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *Acce
 			Int("status-code", response.StatusCode).
 			FromReader("github-response", response.Body).
 			Msg("unexpected reply from GitHub")
+	}
+
+	if len(requiredScopes) == 0 {
+		return nil
+	}
+
+	foundScopes := map[string]bool{}
+	scopeSlice := strings.Split(response.Header.Get("X-OAuth-Scopes"), ",")
+	for _, es := range scopeSlice {
+		for _, rs := range requiredScopes {
+			r, err := regexp.Compile(rs)
+			if err != nil {
+				return cerr.ErrProviderVerification.Err(err).Msgf("failed to compile regexp: %s", err.Error())
+			}
+			if r.MatchString(strings.TrimSpace(es)) {
+				foundScopes[rs] = true
+				break
+			}
+		}
+	}
+	if len(foundScopes) != len(requiredScopes) {
+		return cerr.ErrProviderVerification.
+			Interface("provided-scopes", scopeSlice).
+			Interface("required-scopes", requiredScopes).
+			Msg("github access token is missing scopes")
 	}
 
 	return nil

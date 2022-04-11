@@ -67,7 +67,7 @@ func TestGithubConstructor(t *testing.T) {
 	token := &AccessToken{Token: ""}
 
 	// Act
-	err := p.ValidateConnection(context.Background(), token)
+	err := p.ValidateConnection(context.Background(), token, []string{})
 
 	// Assert
 	assert.Error(err)
@@ -87,7 +87,7 @@ func TestValidateConnectionGetUsersFails(t *testing.T) {
 	mockGithubIntr.EXPECT().GetUsers(gomock.Any(), gomock.Any()).Return(nil, nil, errors.New("no Connection"))
 
 	// Act
-	err := p.ValidateConnection(context.Background(), token)
+	err := p.ValidateConnection(context.Background(), token, []string{})
 
 	// Assert
 	assert.Error(err)
@@ -109,7 +109,7 @@ func TestGithubValidateConnectionErrorResponse(t *testing.T) {
 	mockGithubIntr.EXPECT().GetUsers(gomock.Any(), gomock.Any()).Return(nil, resp, nil)
 
 	// Act
-	err := p.ValidateConnection(context.Background(), token)
+	err := p.ValidateConnection(context.Background(), token, []string{})
 
 	// Assert
 	assert.Error(err)
@@ -131,7 +131,28 @@ func TestGithubValidateConnection(t *testing.T) {
 	mockGithubIntr.EXPECT().GetUsers(gomock.Any(), gomock.Any()).Return(nil, resp, nil)
 
 	// Act
-	err := p.ValidateConnection(context.Background(), token)
+	err := p.ValidateConnection(context.Background(), token, []string{})
+
+	// Assert
+	assert.NoError(err)
+}
+
+func TestGithubValidateConnectionScopes(t *testing.T) {
+	// Arrange
+	assert := require.New(t)
+	ctrl := gomock.NewController(t)
+	mockintrGh := newMockGithubIntrFunc(ctrl)
+	mockintrGQL := newMockGraphqlIntrFunc(ctrl)
+	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
+	token := &AccessToken{Token: "sometokenvalue"}
+	resp := &github.Response{Response: &http.Response{StatusCode: 200, Header: http.Header{}}}
+	resp.Response.Header.Set("X-OAuth-Scopes", "repo,user,admin:org")
+
+	// Expect
+	mockGithubIntr.EXPECT().GetUsers(gomock.Any(), gomock.Any()).Return(nil, resp, nil)
+
+	// Act
+	err := p.ValidateConnection(context.Background(), token, []string{"repo", "user", "(admin|read):org"})
 
 	// Assert
 	assert.NoError(err)
