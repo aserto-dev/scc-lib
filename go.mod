@@ -4,9 +4,6 @@ go 1.17
 
 // replace github.com/aserto-dev/go-grpc => ../go-grpc
 
-// TODO: remove this replace once https://github.com/xanzy/go-gitlab/pull/1447 is merged
-replace github.com/xanzy/go-gitlab => github.com/oanatmaria/go-gitlab v0.62.1-0.20220408093027-4c1295c2c237
-
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/aserto-dev/go-grpc v0.8.8
@@ -22,7 +19,7 @@ require (
 	github.com/shurcooL/githubv4 v0.0.0-20220115235240-a14260e6f8a2
 	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a
 	github.com/stretchr/testify v1.7.0
-	github.com/xanzy/go-gitlab v0.58.0
+	github.com/xanzy/go-gitlab v0.62.1-0.20220411083521-2c684ca1fe48
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
