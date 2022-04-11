@@ -12,6 +12,7 @@ import (
 	scc "github.com/aserto-dev/go-grpc/aserto/tenant/scc/v1"
 	"github.com/aserto-dev/go-utils/cerr"
 	"github.com/aserto-dev/go-utils/retry"
+	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/google/go-github/v33/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -26,33 +27,18 @@ var _ Source = &githubSource{}
 
 // githubSource deals with source management on github.com
 type githubSource struct {
-	logger *zerolog.Logger
-	cfg    *Config
-}
-
-// NewGithub creates a new Github
-func NewGithub(log *zerolog.Logger, cfg *Config) Source {
-	ghLogger := log.With().Str("component", "github-provider").Logger()
-
-	return &githubSource{
-		cfg:    cfg,
-		logger: &ghLogger,
-	}
+	logger           *zerolog.Logger
+	cfg              *Config
+	interactionsFunc interactions.GhIntr
+	graphqlFunc      interactions.GraphQLIntr
 }
 
 func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *AccessToken) error {
-	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: accessToken.Token,
-			TokenType:   accessToken.Type,
-		},
-	)
-	clientWithToken := oauth2.NewClient(ctx, tokenSource)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
 
-	githubClient := github.NewClient(clientWithToken)
-	_, response, err := githubClient.Users.Get(ctx, "")
+	_, response, err := githubClient.GetUsers(ctx, "")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to connect to Github")
 	}
 
 	if response.StatusCode != http.StatusOK {
@@ -68,14 +54,7 @@ func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *Acce
 
 // Profile returns the username of the user that owns the token, and its associated repos
 func (g *githubSource) Profile(ctx context.Context, accessToken *AccessToken) (string, []*scc.Repo, error) {
-	src := oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: accessToken.Token,
-			TokenType:   accessToken.Type,
-		},
-	)
-	httpClient := oauth2.NewClient(ctx, src)
-	client := graphql.NewClient("https://api.github.com/graphql", httpClient)
+	client := g.graphqlFunc(ctx, accessToken.Token, accessToken.Type)
 
 	repos := []*scc.Repo{}
 	username := ""
@@ -135,29 +114,13 @@ func (g *githubSource) Profile(ctx context.Context, accessToken *AccessToken) (s
 }
 
 func (g *githubSource) HasSecret(ctx context.Context, accessToken *AccessToken, owner, repo, secretName string) (bool, error) {
-	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: accessToken.Token,
-			TokenType:   accessToken.Type,
-		},
-	)
-	clientWithToken := oauth2.NewClient(ctx, tokenSource)
-
-	githubClient := github.NewClient(clientWithToken)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
 
 	return g.hasSecret(ctx, githubClient, owner, repo, secretName)
 }
 
 func (g *githubSource) AddSecretToRepo(ctx context.Context, accessToken *AccessToken, orgName, repoName, secretName, value string, overrideSecret bool) error {
-	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: accessToken.Token,
-			TokenType:   accessToken.Type,
-		},
-	)
-	clientWithToken := oauth2.NewClient(ctx, tokenSource)
-
-	githubClient := github.NewClient(clientWithToken)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
 
 	if orgName == "" {
 		return errors.New("No org name was provided")
@@ -170,7 +133,7 @@ func (g *githubSource) AddSecretToRepo(ctx context.Context, accessToken *AccessT
 	var pk *github.PublicKey
 	var err error
 	err = retry.Retry(time.Duration(g.cfg.CreateRepoTimeoutSeconds)*time.Second, func(i int) error {
-		pk, _, err = githubClient.Actions.GetRepoPublicKey(ctx, orgName, repoName)
+		pk, err = githubClient.GetRepoPublicKey(ctx, orgName, repoName)
 		return err
 	})
 
@@ -195,7 +158,7 @@ func (g *githubSource) AddSecretToRepo(ctx context.Context, accessToken *AccessT
 
 	var response *github.Response
 	err = retry.Retry(time.Duration(g.cfg.CreateRepoTimeoutSeconds)*time.Second, func(i int) error {
-		response, err = githubClient.Actions.CreateOrUpdateRepoSecret(ctx, orgName, repoName, &github.EncryptedSecret{
+		response, err = githubClient.CreateOrUpdateRepoSecret(ctx, orgName, repoName, &github.EncryptedSecret{
 			Name:           secretName,
 			EncryptedValue: encryptedString,
 			KeyID:          pk.GetKeyID(),
@@ -216,14 +179,7 @@ func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 	if page == nil {
 		return nil, nil, errors.New("page must not be empty")
 	}
-	src := oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: accessToken.Token,
-			TokenType:   accessToken.Type,
-		},
-	)
-	httpClient := oauth2.NewClient(ctx, src)
-	client := graphql.NewClient("https://api.github.com/graphql", httpClient)
+	client := g.graphqlFunc(ctx, accessToken.Token, accessToken.Type)
 
 	var result []*api.SccOrg
 
@@ -310,14 +266,7 @@ func (g *githubSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 	}
 	result := []*scc.Repo{}
 
-	src := oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: accessToken.Token,
-			TokenType:   accessToken.Type,
-		},
-	)
-	httpClient := oauth2.NewClient(ctx, src)
-	client := graphql.NewClient("https://api.github.com/graphql", httpClient)
+	client := g.graphqlFunc(ctx, accessToken.Token, accessToken.Type)
 
 	var query struct {
 		Search struct {
@@ -399,17 +348,9 @@ func (g *githubSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 func (g *githubSource) GetRepo(ctx context.Context, accessToken *AccessToken, owner, repo string) (*scc.Repo, error) {
 	result := &scc.Repo{}
 
-	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: accessToken.Token,
-			TokenType:   accessToken.Type,
-		},
-	)
-	clientWithToken := oauth2.NewClient(ctx, tokenSource)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
 
-	githubClient := github.NewClient(clientWithToken)
-
-	gitRepo, _, err := githubClient.Repositories.Get(ctx, owner, repo)
+	gitRepo, err := githubClient.GetRepo(ctx, owner, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get repo")
 	}
@@ -422,16 +363,9 @@ func (g *githubSource) GetRepo(ctx context.Context, accessToken *AccessToken, ow
 }
 
 func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken, owner, name string) error {
-	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: accessToken.Token,
-			TokenType:   accessToken.Type,
-		},
-	)
-	clientWithToken := oauth2.NewClient(ctx, tokenSource)
-	githubClient := github.NewClient(clientWithToken)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
 
-	user, _, err := githubClient.Users.Get(ctx, "")
+	user, _, err := githubClient.GetUsers(ctx, "")
 	if err != nil {
 		return errors.Wrap(err, "failed to read user from github")
 	}
@@ -440,7 +374,7 @@ func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 		owner = ""
 	}
 
-	_, _, err = githubClient.Repositories.Create(ctx, owner, &github.Repository{
+	err = githubClient.CreateRepo(ctx, owner, &github.Repository{
 		Name:     &name,
 		AutoInit: pointer.BoolPtr(true),
 	})
@@ -453,14 +387,7 @@ func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 
 // InitialTag creates a tag for a repo, if no other tags are defined for it
 func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName string) error {
-	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: accessToken.Token,
-			TokenType:   accessToken.Type,
-		},
-	)
-	clientWithToken := oauth2.NewClient(ctx, tokenSource)
-	githubClient := github.NewClient(clientWithToken)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
 
 	repoPieces := strings.Split(fullName, "/")
 	if len(repoPieces) != 2 {
@@ -470,12 +397,12 @@ func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 	owner := repoPieces[0]
 	name := repoPieces[1]
 
-	repo, _, err := githubClient.Repositories.Get(ctx, owner, name)
+	repo, err := githubClient.GetRepo(ctx, owner, name)
 	if err != nil {
 		return errors.Wrap(err, "failed to get repo")
 	}
 
-	tags, _, err := githubClient.Repositories.ListTags(ctx, owner, name, &github.ListOptions{})
+	tags, err := githubClient.ListRepoTags(ctx, owner, name, &github.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "failed to list tags for repo '%s/%s'", owner, name)
 	}
@@ -485,12 +412,12 @@ func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 	}
 
 	err = retry.Retry(time.Second*time.Duration(g.cfg.CreateRepoTimeoutSeconds), func(i int) error {
-		ref, response, err := githubClient.Git.GetRef(ctx, owner, name, "heads/"+*repo.DefaultBranch)
+		ref, response, err := githubClient.GetRepoRef(ctx, owner, name, "heads/"+*repo.DefaultBranch)
 		if err != nil {
 			return errors.Wrapf(err, "repo seems to be empty; response code from github [%d]", response.StatusCode)
 		}
 
-		tag, _, err := githubClient.Git.CreateTag(ctx, owner, name, &github.Tag{
+		tag, err := githubClient.CreateRepoTag(ctx, owner, name, &github.Tag{
 			Tag:     &defaultTag,
 			Message: &defaultTag,
 			SHA:     ref.Object.SHA,
@@ -501,7 +428,7 @@ func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 		}
 
 		tagRef := "refs/tags/" + *tag.Tag
-		_, _, err = githubClient.Git.CreateRef(ctx, owner, name, &github.Reference{
+		err = githubClient.CreateRepoRef(ctx, owner, name, &github.Reference{
 			Ref:    &tagRef,
 			Object: tag.Object,
 		})
@@ -620,11 +547,11 @@ func createCommitOnBranchInput(ref githubv4.String, commit *Commit) githubv4.Cre
 	return input
 }
 
-func (g *githubSource) hasSecret(ctx context.Context, githubClient *github.Client, owner, repo, secretName string) (bool, error) {
+func (g *githubSource) hasSecret(ctx context.Context, githubClient interactions.GithubIntr, owner, repo, secretName string) (bool, error) {
 	var existingSecrets *github.Secrets
 	err := retry.Retry(time.Duration(g.cfg.CreateRepoTimeoutSeconds)*time.Second, func(i int) error {
 		var err error
-		existingSecrets, _, err = githubClient.Actions.ListRepoSecrets(ctx, owner, repo, &github.ListOptions{})
+		existingSecrets, err = githubClient.ListRepoSecrets(ctx, owner, repo, &github.ListOptions{})
 		return err
 	})
 	if err != nil {
@@ -641,18 +568,9 @@ func (g *githubSource) hasSecret(ctx context.Context, githubClient *github.Clien
 }
 
 func (g *githubSource) GetDefaultBranch(ctx context.Context, accessToken *AccessToken, owner, repo string) (string, error) {
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
 
-	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{
-			AccessToken: accessToken.Token,
-			TokenType:   accessToken.Type,
-		},
-	)
-	clientWithToken := oauth2.NewClient(ctx, tokenSource)
-
-	githubClient := github.NewClient(clientWithToken)
-
-	gitRepo, _, err := githubClient.Repositories.Get(ctx, owner, repo)
+	gitRepo, err := githubClient.GetRepo(ctx, owner, repo)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get repo")
 	}
@@ -666,7 +584,11 @@ func encryptSecretWithPublicKey(publicKey *github.PublicKey, secretValue string)
 		return "", fmt.Errorf("base64.StdEncoding.DecodeString was unable to decode public key: %v", err)
 	}
 	var pkRaw [32]byte
-	copy(pkRaw[:], decodedPublicKey[0:32])
+	// publiKey.GetKey() can return empty string here, should I return err in this case?
+	if len(decodedPublicKey) >= 32 {
+		copy(pkRaw[:], decodedPublicKey[0:32])
+	}
+	copy(pkRaw[:], decodedPublicKey)
 
 	encryptedBytes, err := box.SealAnonymous(nil, []byte(secretValue), &pkRaw, nil)
 	if err != nil {
