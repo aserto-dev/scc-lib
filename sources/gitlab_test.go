@@ -60,7 +60,7 @@ func TestConstructor(t *testing.T) {
 	token := &AccessToken{Token: ""}
 
 	// Act
-	err := p.ValidateConnection(context.Background(), token)
+	err := p.ValidateConnection(context.Background(), token, []string{})
 
 	// Assert
 	assert.Error(err)
@@ -76,7 +76,7 @@ func TestValidateConnectionWithEmptyToken(t *testing.T) {
 	token := &AccessToken{Token: ""}
 
 	// Act
-	err := p.ValidateConnection(context.Background(), token)
+	err := p.ValidateConnection(context.Background(), token, []string{})
 
 	// Assert
 	assert.Error(err)
@@ -95,7 +95,7 @@ func TestValidateConnectionDoesntConnect(t *testing.T) {
 	mockIntr.EXPECT().CurrentUser().Return(nil, nil, errors.New("no Connection"))
 
 	// Act
-	err := p.ValidateConnection(context.Background(), token)
+	err := p.ValidateConnection(context.Background(), token, []string{})
 
 	// Assert
 	assert.Error(err)
@@ -115,7 +115,7 @@ func TestValidateConnection(t *testing.T) {
 	mockIntr.EXPECT().CurrentUser().Return(nil, resp, nil)
 
 	// Act
-	err := p.ValidateConnection(context.Background(), token)
+	err := p.ValidateConnection(context.Background(), token, []string{})
 
 	// Assert
 	assert.NoError(err)
@@ -135,7 +135,7 @@ func TestValidateConnectionErrorResponse(t *testing.T) {
 	mockIntr.EXPECT().CurrentUser().Return(nil, resp, nil)
 
 	// Act
-	err := p.ValidateConnection(context.Background(), token)
+	err := p.ValidateConnection(context.Background(), token, []string{})
 
 	// Assert
 	assert.Error(err)
