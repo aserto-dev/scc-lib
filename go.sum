@@ -43,8 +43,8 @@ github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAE
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/aserto-dev/clui v0.8.0 h1:6naBp7djFHl0frhdU1aO1SxQ1+onE/pPCYr04Xo4kT4=
 github.com/aserto-dev/clui v0.8.0/go.mod h1:XpJxwNzSQaGN6rqXONZJEaeez4MUaCPikM2lKSngrXM=
-github.com/aserto-dev/go-grpc v0.8.8 h1:cP6pijo3q7NU9KzIptl7zXHRDT2lvGjObQ+E1JNPaqI=
-github.com/aserto-dev/go-grpc v0.8.8/go.mod h1:hog+zu5jE3+Y6t7m5PIBlavosmbd2qdF0BGZ9ueWK74=
+github.com/aserto-dev/go-grpc v0.8.10 h1:s5HailNE93RUQgiFmYn/HiX/IpXllj3ozIhL93YNEXE=
+github.com/aserto-dev/go-grpc v0.8.10/go.mod h1:hog+zu5jE3+Y6t7m5PIBlavosmbd2qdF0BGZ9ueWK74=
 github.com/aserto-dev/go-utils v0.8.3 h1:UiadJt0hFxV7OpnE7rJ9GPYlCiyn6t8uGE9cUGmEhbY=
 github.com/aserto-dev/go-utils v0.8.3/go.mod h1:iBix89eWMjwH1LR2jxfN5Rk7Qj2qivtXpsnFWbiJG1w=
 github.com/aserto-dev/mage-loot v0.8.1 h1:dBXReBOf8T3Yupp5PFgeSs0//jMPPPFWMDQyWvo3vVw=

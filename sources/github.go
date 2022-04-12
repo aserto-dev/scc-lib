@@ -24,7 +24,10 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-var _ Source = &githubSource{}
+var (
+	_        Source = &githubSource{}
+	githubCI        = "/actions"
+)
 
 // githubSource deals with source management on github.com
 type githubSource struct {
@@ -123,9 +126,10 @@ func (g *githubSource) Profile(ctx context.Context, accessToken *AccessToken) (s
 		username = string(query.Viewer.Login)
 		for _, r := range query.Viewer.Repositories.Nodes {
 			repos = append(repos, &scc.Repo{
-				Name: string(r.Name),
-				Org:  string(r.Owner.Login),
-				Url:  string(r.URL),
+				Name:  string(r.Name),
+				Org:   string(r.Owner.Login),
+				Url:   string(r.URL),
+				CiUrl: string(r.URL) + githubCI,
 			})
 		}
 
@@ -340,9 +344,10 @@ func (g *githubSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 
 		for _, r := range query.Search.Edges {
 			result = append(result, &scc.Repo{
-				Name: string(r.Node.Repository.Name),
-				Org:  string(r.Node.Repository.Owner.Login),
-				Url:  string(r.Node.Repository.URL),
+				Name:  string(r.Node.Repository.Name),
+				Org:   string(r.Node.Repository.Owner.Login),
+				Url:   string(r.Node.Repository.URL),
+				CiUrl: string(r.Node.Repository.URL) + githubCI,
 			})
 		}
 
@@ -384,6 +389,7 @@ func (g *githubSource) GetRepo(ctx context.Context, accessToken *AccessToken, ow
 	result.Name = *gitRepo.Name
 	result.Org = *gitRepo.Owner.Login
 	result.Url = *gitRepo.HTMLURL
+	result.CiUrl = *gitRepo.HTMLURL + githubCI
 
 	return result, err
 }

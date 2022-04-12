@@ -7,9 +7,7 @@ import (
 	scc "github.com/aserto-dev/go-grpc/aserto/tenant/scc/v1"
 )
 
-var (
-	defaultTag = "v0.0.0"
-)
+var defaultTag = "v0.0.0"
 
 type AccessToken struct {
 	Token string

@@ -6,7 +6,7 @@ go 1.17
 
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/aserto-dev/go-grpc v0.8.8
+	github.com/aserto-dev/go-grpc v0.8.10
 	github.com/aserto-dev/go-utils v0.8.3
 	github.com/aserto-dev/mage-loot v0.8.1
 	github.com/friendsofgo/errors v0.9.2

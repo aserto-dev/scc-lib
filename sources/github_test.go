@@ -616,6 +616,7 @@ func TestGithubGetRepo(t *testing.T) {
 	assert.NoError(err)
 	assert.NotNil(repo)
 	assert.Equal(repo.Url, policyURL)
+	assert.Equal(repo.CiUrl, policyURL+"/actions")
 }
 
 func TestGithubCreateRepoGetUsersFails(t *testing.T) {
@@ -816,7 +817,7 @@ func TestGithubInitialTagAndGetRepoRefFails(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockintrGh := newMockGithubIntrFunc(ctrl)
 	mockintrGQL := newMockGraphqlIntrFunc(ctrl)
-	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
+	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
 	token := &AccessToken{Token: "sometokenvalue"}
 	defaultBr := defaultBranch
 	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
