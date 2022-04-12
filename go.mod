@@ -19,7 +19,7 @@ require (
 	github.com/shurcooL/githubv4 v0.0.0-20220115235240-a14260e6f8a2
 	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a
 	github.com/stretchr/testify v1.7.0
-	github.com/xanzy/go-gitlab v0.62.1-0.20220411083521-2c684ca1fe48
+	github.com/xanzy/go-gitlab v0.63.0
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
