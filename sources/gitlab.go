@@ -16,7 +16,10 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
-var _ Source = &gitlabSource{}
+var (
+	_        Source = &gitlabSource{}
+	gitlabCI        = "/-/pipelines"
+)
 
 // gitlabSource deals with source management on gitlab.com
 type gitlabSource struct {
@@ -78,9 +81,10 @@ func (g *gitlabSource) Profile(ctx context.Context, accessToken *AccessToken) (s
 				continue
 			}
 			repos = append(repos, &scc.Repo{
-				Name: proj.Name,
-				Org:  proj.Owner.Username,
-				Url:  proj.WebURL,
+				Name:  proj.Name,
+				Org:   proj.Owner.Username,
+				Url:   proj.WebURL,
+				CiUrl: proj.WebURL + gitlabCI,
 			})
 		}
 
@@ -235,9 +239,10 @@ func (g *gitlabSource) listPagedRepos(
 
 		for _, proj := range projects {
 			repos = append(repos, &scc.Repo{
-				Name: proj.Name,
-				Org:  user,
-				Url:  proj.WebURL,
+				Name:  proj.Name,
+				Org:   user,
+				Url:   proj.WebURL,
+				CiUrl: proj.WebURL + gitlabCI,
 			})
 		}
 
@@ -289,9 +294,10 @@ func (g *gitlabSource) getSccRepoWithGitlabProj(accessToken *AccessToken, owner,
 	}
 
 	resultRepo = &scc.Repo{
-		Name: proj.Name,
-		Org:  owner,
-		Url:  proj.WebURL,
+		Name:  proj.Name,
+		Org:   owner,
+		Url:   proj.WebURL,
+		CiUrl: proj.WebURL + gitlabCI,
 	}
 
 	return resultRepo, proj, nil

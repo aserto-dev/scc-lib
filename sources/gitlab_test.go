@@ -202,6 +202,7 @@ func TestProfileReadOnePage(t *testing.T) {
 	assert.Equal(username, gitlabUser.Username)
 	assert.Equal(len(repos), 1)
 	assert.Equal(repos[0].Name, "template-policy")
+	assert.Equal(repos[0].CiUrl, "gitlab.com/template-policy/-/pipelines")
 }
 
 func TestProfileReadTwoPages(t *testing.T) {
