@@ -291,7 +291,7 @@ func TestListOrgsAllInOnePage(t *testing.T) {
 	token := &AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: -1, Token: ""}
 	var groups []*gitlab.Group
-	groups = append(groups, &gitlab.Group{Name: "tests", Path: "test7929"})
+	groups = append(groups, &gitlab.Group{Name: "tests", FullPath: "test7929"})
 	resp := &gitlab.Response{NextPage: 0, TotalItems: 1}
 
 	// Expect
