@@ -349,13 +349,12 @@ func (g *gitlabSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 		return errors.Wrap(err, "failed to create Gitlab client")
 	}
 
-	repoPieces := strings.Split(fullName, "/")
-	if len(repoPieces) != 2 {
+	if strings.Count(fullName, "/") == 0 {
 		return errors.Errorf("invalid full gitlab repo name '%s', should be in the form owner/repo", fullName)
 	}
 
-	owner := repoPieces[0]
-	name := repoPieces[1]
+	owner := fullName[:strings.LastIndex(fullName, "/")]
+	name := fullName[strings.LastIndex(fullName, "/")+1:]
 
 	_, proj, err := g.getSccRepoWithGitlabProj(accessToken, owner, name)
 
