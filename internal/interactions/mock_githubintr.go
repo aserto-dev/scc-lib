@@ -93,6 +93,20 @@ func (mr *MockGithubIntrMockRecorder) CreateRepoTag(arg0, arg1, arg2, arg3 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRepoTag", reflect.TypeOf((*MockGithubIntr)(nil).CreateRepoTag), arg0, arg1, arg2, arg3)
 }
 
+// CreateWorkflowDispatchEventByFileName mocks base method.
+func (m *MockGithubIntr) CreateWorkflowDispatchEventByFileName(arg0 context.Context, arg1, arg2, arg3 string, arg4 github.CreateWorkflowDispatchEventRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateWorkflowDispatchEventByFileName", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateWorkflowDispatchEventByFileName indicates an expected call of CreateWorkflowDispatchEventByFileName.
+func (mr *MockGithubIntrMockRecorder) CreateWorkflowDispatchEventByFileName(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorkflowDispatchEventByFileName", reflect.TypeOf((*MockGithubIntr)(nil).CreateWorkflowDispatchEventByFileName), arg0, arg1, arg2, arg3, arg4)
+}
+
 // GetRepo mocks base method.
 func (m *MockGithubIntr) GetRepo(arg0 context.Context, arg1, arg2 string) (*github.Repository, error) {
 	m.ctrl.T.Helper()
@@ -183,4 +197,19 @@ func (m *MockGithubIntr) ListRepoTags(arg0 context.Context, arg1, arg2 string, a
 func (mr *MockGithubIntrMockRecorder) ListRepoTags(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRepoTags", reflect.TypeOf((*MockGithubIntr)(nil).ListRepoTags), arg0, arg1, arg2, arg3)
+}
+
+// ListRepositoryWorkflowRuns mocks base method.
+func (m *MockGithubIntr) ListRepositoryWorkflowRuns(arg0 context.Context, arg1, arg2 string, arg3 *github.ListWorkflowRunsOptions) (*github.WorkflowRuns, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListRepositoryWorkflowRuns", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*github.WorkflowRuns)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListRepositoryWorkflowRuns indicates an expected call of ListRepositoryWorkflowRuns.
+func (mr *MockGithubIntrMockRecorder) ListRepositoryWorkflowRuns(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRepositoryWorkflowRuns", reflect.TypeOf((*MockGithubIntr)(nil).ListRepositoryWorkflowRuns), arg0, arg1, arg2, arg3)
 }

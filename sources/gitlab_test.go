@@ -610,7 +610,7 @@ func TestInitialTagWithWrongFullName(t *testing.T) {
 	token := &AccessToken{Token: "sometokenvalue"}
 
 	// Act
-	err := p.InitialTag(context.Background(), token, "aserto-dev")
+	err := p.InitialTag(context.Background(), token, "aserto-dev", "")
 
 	// Assert
 	assert.Error(err)
@@ -631,7 +631,7 @@ func TestInitialTagWithRepoAlreadyTagged(t *testing.T) {
 	mockIntr.EXPECT().GetProject("aserto-dev/policy").Return(proj, nil, nil)
 
 	// Act
-	err := p.InitialTag(context.Background(), token, "aserto-dev/policy")
+	err := p.InitialTag(context.Background(), token, "aserto-dev/policy", "")
 
 	// Assert
 	assert.NoError(err)
@@ -652,7 +652,7 @@ func TestInitialTagFails(t *testing.T) {
 	mockIntr.EXPECT().CreateTag(gomock.Any(), gomock.Any()).Return(errors.New("failed to create tag"))
 
 	// Act
-	err := p.InitialTag(context.Background(), token, "aserto-dev/policy")
+	err := p.InitialTag(context.Background(), token, "aserto-dev/policy", "")
 
 	// Assert
 	assert.Error(err)
@@ -674,7 +674,7 @@ func TestInitialTag(t *testing.T) {
 	mockIntr.EXPECT().CreateTag(gomock.Any(), gomock.Any()).Return(nil)
 
 	// Act
-	err := p.InitialTag(context.Background(), token, "aserto-dev/policy")
+	err := p.InitialTag(context.Background(), token, "aserto-dev/policy", "")
 
 	// Assert
 	assert.NoError(err)
