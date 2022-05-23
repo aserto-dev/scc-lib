@@ -418,7 +418,7 @@ func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 }
 
 // InitialTag creates a tag for a repo, if no other tags are defined for it
-func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName string) error {
+func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName, workflowFileName string) error {
 	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
 
 	repoPieces := strings.Split(fullName, "/")
@@ -470,7 +470,41 @@ func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 		return nil
 	})
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	if workflowFileName != "" {
+		g.logger.Debug().Msgf("trigger manual dispatch for [%s] if a workflow run doesn't exist", workflowFileName)
+		return g.forceRerunWorkflow(ctx, githubClient, owner, name, workflowFileName)
+	}
+	return nil
+}
+
+func (g *githubSource) forceRerunWorkflow(ctx context.Context, githubClient interactions.GithubIntr, owner, name, workflowFileName string) error {
+	err := retry.Retry(time.Second*time.Duration(g.cfg.CreateRepoTimeoutSeconds), func(i int) error {
+		runs, err := githubClient.ListRepositoryWorkflowRuns(ctx, owner, name, &github.ListWorkflowRunsOptions{})
+		if err != nil {
+			return err
+		}
+		if runs == nil || len(runs.WorkflowRuns) == 0 {
+			return errors.New("No workflows were triggered")
+		}
+		return nil
+	})
+
+	if err != nil {
+		event := github.CreateWorkflowDispatchEventRequest{
+			Ref: defaultTag,
+		}
+		g.logger.Debug().Msgf("triggering workflow dispatch event for [%s]", workflowFileName)
+		err = githubClient.CreateWorkflowDispatchEventByFileName(ctx, owner, name, workflowFileName, event)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *AccessToken, commit *Commit) error {

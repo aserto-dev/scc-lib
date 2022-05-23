@@ -22,6 +22,8 @@ type GithubIntr interface {
 	GetRepoRef(context.Context, string, string, string) (*github.Reference, *github.Response, error)
 	CreateRepoTag(context.Context, string, string, *github.Tag) (*github.Tag, error)
 	CreateRepoRef(context.Context, string, string, *github.Reference) error
+	ListRepositoryWorkflowRuns(context.Context, string, string, *github.ListWorkflowRunsOptions) (*github.WorkflowRuns, error)
+	CreateWorkflowDispatchEventByFileName(context.Context, string, string, string, github.CreateWorkflowDispatchEventRequest) error
 }
 
 type githubInteraction struct {
@@ -88,5 +90,15 @@ func (gh *githubInteraction) CreateRepoTag(ctx context.Context, owner, repo stri
 
 func (gh *githubInteraction) CreateRepoRef(ctx context.Context, owner, repo string, ref *github.Reference) error {
 	_, _, err := gh.Client.Git.CreateRef(ctx, owner, repo, ref)
+	return err
+}
+
+func (gh *githubInteraction) ListRepositoryWorkflowRuns(ctx context.Context, owner, repo string, opts *github.ListWorkflowRunsOptions) (*github.WorkflowRuns, error) {
+	runs, _, err := gh.Client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, opts)
+	return runs, err
+}
+
+func (gh *githubInteraction) CreateWorkflowDispatchEventByFileName(ctx context.Context, owner, repo, fileNameWorkflow string, event github.CreateWorkflowDispatchEventRequest) error {
+	_, err := gh.Client.Actions.CreateWorkflowDispatchEventByFileName(ctx, owner, repo, fileNameWorkflow, event)
 	return err
 }

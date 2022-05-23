@@ -342,7 +342,7 @@ func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 	return err
 }
 
-func (g *gitlabSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName string) error {
+func (g *gitlabSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName, workflowFileName string) error {
 	client, err := g.interactionsFunc(accessToken.Token)
 
 	if err != nil {

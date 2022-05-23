@@ -738,7 +738,7 @@ func TestGithubInitialTagWithInvalidRepoPath(t *testing.T) {
 	token := &AccessToken{Token: "sometokenvalue"}
 
 	// Act
-	err := p.InitialTag(context.Background(), token, "policy")
+	err := p.InitialTag(context.Background(), token, "policy", "build-workflow.yaml")
 
 	// Assert
 	assert.Error(err)
@@ -758,7 +758,7 @@ func TestGithubInitialTagAndGetRepoFails(t *testing.T) {
 	mockGithubIntr.EXPECT().GetRepo(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("not found"))
 
 	// Act
-	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo)
+	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo, "build-workflow.yaml")
 
 	// Assert
 	assert.Error(err)
@@ -781,7 +781,7 @@ func TestGithubInitialTagAndListRepoTagsFails(t *testing.T) {
 		Return(nil, errors.New("tags not found"))
 
 	// Act
-	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo)
+	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo, "build-workflow.yaml")
 
 	// Assert
 	assert.Error(err)
@@ -805,7 +805,7 @@ func TestGithubInitialTagAndRepoHasTag(t *testing.T) {
 		Return([]*github.RepositoryTag{repoTag}, nil)
 
 	// Act
-	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo)
+	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo, "build-workflow.yaml")
 
 	// Assert
 	assert.NoError(err)
@@ -833,7 +833,7 @@ func TestGithubInitialTagAndGetRepoRefFails(t *testing.T) {
 		Return(nil, resp, errors.New("ref not found"))
 
 	// Act
-	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo)
+	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo, "build-workflow.yaml")
 
 	// Assert
 	assert.Error(err)
@@ -846,7 +846,7 @@ func TestGithubInitialTag(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockintrGh := newMockGithubIntrFunc(ctrl)
 	mockintrGQL := newMockGraphqlIntrFunc(ctrl)
-	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 1}, mockintrGh, mockintrGQL)
+	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
 	token := &AccessToken{Token: "sometokenvalue"}
 	defaultBr := defaultBranch
 	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
@@ -870,9 +870,96 @@ func TestGithubInitialTag(t *testing.T) {
 	mockGithubIntr.EXPECT().
 		CreateRepoRef(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil)
+	mockGithubIntr.EXPECT().ListRepositoryWorkflowRuns(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+	mockGithubIntr.EXPECT().CreateWorkflowDispatchEventByFileName(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
 	// Act
-	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo)
+	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo, "build-workflow.yaml")
+
+	// Assert
+	assert.NoError(err)
+}
+
+func TestGithubInitialTagRetriggerDoesNotWork(t *testing.T) {
+	// Arrange
+	assert := require.New(t)
+	ctrl := gomock.NewController(t)
+	mockintrGh := newMockGithubIntrFunc(ctrl)
+	mockintrGQL := newMockGraphqlIntrFunc(ctrl)
+	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	token := &AccessToken{Token: "sometokenvalue"}
+	defaultBr := defaultBranch
+	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
+	resp := &github.Response{Response: &http.Response{StatusCode: 200}}
+	sha := "somesh"
+	obj := &github.GitObject{SHA: &sha}
+	ref := &github.Reference{Object: obj}
+	tag := &github.Tag{Object: obj, Tag: &defaultTag}
+
+	// Expect
+	mockGithubIntr.EXPECT().GetRepo(gomock.Any(), gomock.Any(), gomock.Any()).Return(githubRepo, nil)
+	mockGithubIntr.EXPECT().
+		ListRepoTags(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, nil)
+	mockGithubIntr.EXPECT().
+		GetRepoRef(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(ref, resp, nil)
+	mockGithubIntr.EXPECT().
+		CreateRepoTag(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(tag, nil)
+	mockGithubIntr.EXPECT().
+		CreateRepoRef(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+	mockGithubIntr.EXPECT().ListRepositoryWorkflowRuns(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+	mockGithubIntr.EXPECT().CreateWorkflowDispatchEventByFileName(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("boom"))
+
+	// Act
+	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo, "build-workflow.yaml")
+
+	// Assert
+	assert.Error(err)
+	assert.Equal(err.Error(), "boom")
+}
+
+func TestGithubInitialTagWorkflowRunsInstanly(t *testing.T) {
+	// Arrange
+	assert := require.New(t)
+	ctrl := gomock.NewController(t)
+	mockintrGh := newMockGithubIntrFunc(ctrl)
+	mockintrGQL := newMockGraphqlIntrFunc(ctrl)
+	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 1}, mockintrGh, mockintrGQL)
+	token := &AccessToken{Token: "sometokenvalue"}
+	defaultBr := defaultBranch
+	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
+	resp := &github.Response{Response: &http.Response{StatusCode: 200}}
+	sha := "someshh"
+	obj := &github.GitObject{SHA: &sha}
+	ref := &github.Reference{Object: obj}
+	tag := &github.Tag{Object: obj, Tag: &defaultTag}
+	id := int64(345)
+	run := &github.WorkflowRun{ID: &id}
+	runs := &github.WorkflowRuns{
+		WorkflowRuns: []*github.WorkflowRun{run},
+	}
+
+	// Expect
+	mockGithubIntr.EXPECT().GetRepo(gomock.Any(), gomock.Any(), gomock.Any()).Return(githubRepo, nil)
+	mockGithubIntr.EXPECT().
+		ListRepoTags(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, nil)
+	mockGithubIntr.EXPECT().
+		GetRepoRef(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(ref, resp, nil)
+	mockGithubIntr.EXPECT().
+		CreateRepoTag(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(tag, nil)
+	mockGithubIntr.EXPECT().
+		CreateRepoRef(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+	mockGithubIntr.EXPECT().ListRepositoryWorkflowRuns(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(runs, nil)
+
+	// Act
+	err := p.InitialTag(context.Background(), token, githubUsername+"/"+policyRepo, "build-workflow.yaml")
 
 	// Assert
 	assert.NoError(err)
