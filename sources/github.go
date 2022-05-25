@@ -482,7 +482,7 @@ func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 }
 
 func (g *githubSource) forceRerunWorkflow(ctx context.Context, githubClient interactions.GithubIntr, owner, name, workflowFileName string) error {
-	err := retry.Retry(time.Second*time.Duration(g.cfg.CreateRepoTimeoutSeconds), func(i int) error {
+	err := retry.Retry(time.Second*time.Duration(g.cfg.WaitTagTimeoutSeconds), func(i int) error {
 		runs, err := githubClient.ListRepositoryWorkflowRuns(ctx, owner, name, &github.ListWorkflowRunsOptions{})
 		if err != nil {
 			return err
