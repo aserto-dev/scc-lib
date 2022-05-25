@@ -817,7 +817,7 @@ func TestGithubInitialTagAndGetRepoRefFails(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockintrGh := newMockGithubIntrFunc(ctrl)
 	mockintrGQL := newMockGraphqlIntrFunc(ctrl)
-	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
 	token := &AccessToken{Token: "sometokenvalue"}
 	defaultBr := defaultBranch
 	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
@@ -846,7 +846,7 @@ func TestGithubInitialTag(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockintrGh := newMockGithubIntrFunc(ctrl)
 	mockintrGQL := newMockGraphqlIntrFunc(ctrl)
-	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
 	token := &AccessToken{Token: "sometokenvalue"}
 	defaultBr := defaultBranch
 	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
@@ -886,7 +886,7 @@ func TestGithubInitialTagRetriggerDoesNotWork(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockintrGh := newMockGithubIntrFunc(ctrl)
 	mockintrGQL := newMockGraphqlIntrFunc(ctrl)
-	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
 	token := &AccessToken{Token: "sometokenvalue"}
 	defaultBr := defaultBranch
 	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
@@ -927,7 +927,7 @@ func TestGithubInitialTagWorkflowRunsInstanly(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockintrGh := newMockGithubIntrFunc(ctrl)
 	mockintrGQL := newMockGraphqlIntrFunc(ctrl)
-	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 1}, mockintrGh, mockintrGQL)
+	p := NewTestGithub(ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 1, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
 	token := &AccessToken{Token: "sometokenvalue"}
 	defaultBr := defaultBranch
 	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
