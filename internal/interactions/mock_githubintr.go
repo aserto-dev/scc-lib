@@ -35,6 +35,21 @@ func (m *MockGithubIntr) EXPECT() *MockGithubIntrMockRecorder {
 	return m.recorder
 }
 
+// CreateFile mocks base method.
+func (m *MockGithubIntr) CreateFile(ctx context.Context, owner, repo, path string, opts *github.RepositoryContentFileOptions) (*github.RepositoryContentResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateFile", ctx, owner, repo, path, opts)
+	ret0, _ := ret[0].(*github.RepositoryContentResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateFile indicates an expected call of CreateFile.
+func (mr *MockGithubIntrMockRecorder) CreateFile(ctx, owner, repo, path, opts interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFile", reflect.TypeOf((*MockGithubIntr)(nil).CreateFile), ctx, owner, repo, path, opts)
+}
+
 // CreateOrUpdateRepoSecret mocks base method.
 func (m *MockGithubIntr) CreateOrUpdateRepoSecret(arg0 context.Context, arg1, arg2 string, arg3 *github.EncryptedSecret) (*github.Response, error) {
 	m.ctrl.T.Helper()

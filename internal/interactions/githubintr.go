@@ -24,6 +24,7 @@ type GithubIntr interface {
 	CreateRepoRef(context.Context, string, string, *github.Reference) error
 	ListRepositoryWorkflowRuns(context.Context, string, string, *github.ListWorkflowRunsOptions) (*github.WorkflowRuns, error)
 	CreateWorkflowDispatchEventByFileName(context.Context, string, string, string, github.CreateWorkflowDispatchEventRequest) error
+	CreateFile(ctx context.Context, owner, repo, path string, opts *github.RepositoryContentFileOptions) (*github.RepositoryContentResponse, error)
 }
 
 type githubInteraction struct {
@@ -101,4 +102,9 @@ func (gh *githubInteraction) ListRepositoryWorkflowRuns(ctx context.Context, own
 func (gh *githubInteraction) CreateWorkflowDispatchEventByFileName(ctx context.Context, owner, repo, fileNameWorkflow string, event github.CreateWorkflowDispatchEventRequest) error {
 	_, err := gh.Client.Actions.CreateWorkflowDispatchEventByFileName(ctx, owner, repo, fileNameWorkflow, event)
 	return err
+}
+
+func (gh *githubInteraction) CreateFile(ctx context.Context, owner, repo, path string, opts *github.RepositoryContentFileOptions) (*github.RepositoryContentResponse, error) {
+	contentResponse, _, err := gh.Client.Repositories.CreateFile(ctx, owner, repo, path, opts)
+	return contentResponse, err
 }
