@@ -17,7 +17,7 @@ type MockGraphqlIntr struct {
 	recorder *MockGraphqlIntrMockRecorder
 }
 
-// MockGraphqlIntrMockRecorder is the mock recorder for MockGraphqlIntr.
+// MockGraphqlIntrMockRecorder is the mock recorder for tstInteraction.mockGraphql.
 type MockGraphqlIntrMockRecorder struct {
 	mock *MockGraphqlIntr
 }
