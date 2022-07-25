@@ -18,7 +18,7 @@ type MockGithubIntr struct {
 	recorder *MockGithubIntrMockRecorder
 }
 
-// MockGithubIntrMockRecorder is the mock recorder for MockGithubIntr.
+// MockGithubIntrMockRecorder is the mock recorder for tstInteraction.mockGithub.
 type MockGithubIntrMockRecorder struct {
 	mock *MockGithubIntr
 }
