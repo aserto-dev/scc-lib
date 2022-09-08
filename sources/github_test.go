@@ -41,10 +41,10 @@ func setup(t *testing.T) testInteractions {
 		ctrl:        ctrl,
 		mockGithub:  mockGithubIntr,
 		mockGraphql: mockGraphqlIntr,
-		mockGithubIntrFunc: func(ctx context.Context, token, tokenType string) interactions.GithubIntr {
+		mockGithubIntrFunc: func(ctx context.Context, token, tokenType string, rateLimitTimeout, retryCount int) interactions.GithubIntr {
 			return mockGithubIntr
 		},
-		mockGraphqlIntrFunc: func(ctx context.Context, token, tokenType string) interactions.GraphqlIntr {
+		mockGraphqlIntrFunc: func(ctx context.Context, token, tokenType string, rateLimitTimeout, retryCount int) interactions.GraphqlIntr {
 			return mockGraphqlIntr
 		},
 	}

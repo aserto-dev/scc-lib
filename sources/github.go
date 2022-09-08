@@ -38,9 +38,10 @@ type githubSource struct {
 }
 
 func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *AccessToken, requiredScopes []string) error {
-	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	_, response, err := githubClient.GetUsers(ctx, "")
+
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to Github")
 	}
@@ -83,7 +84,7 @@ func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *Acce
 
 // Profile returns the username of the user that owns the token, and its associated repos
 func (g *githubSource) Profile(ctx context.Context, accessToken *AccessToken) (string, []*scc.Repo, error) {
-	client := g.graphqlFunc(ctx, accessToken.Token, accessToken.Type)
+	client := g.graphqlFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	repos := []*scc.Repo{}
 	username := ""
@@ -144,13 +145,13 @@ func (g *githubSource) Profile(ctx context.Context, accessToken *AccessToken) (s
 }
 
 func (g *githubSource) HasSecret(ctx context.Context, accessToken *AccessToken, owner, repo, secretName string) (bool, error) {
-	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	return g.hasSecret(ctx, githubClient, owner, repo, secretName)
 }
 
 func (g *githubSource) AddSecretToRepo(ctx context.Context, accessToken *AccessToken, orgName, repoName, secretName, value string, overrideSecret bool) error {
-	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	if orgName == "" {
 		return errors.New("No org name was provided")
@@ -209,7 +210,7 @@ func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 	if page == nil {
 		return nil, nil, errors.New("page must not be empty")
 	}
-	client := g.graphqlFunc(ctx, accessToken.Token, accessToken.Type)
+	client := g.graphqlFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	var result []*api.SccOrg
 
@@ -296,7 +297,7 @@ func (g *githubSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 	}
 	result := []*scc.Repo{}
 
-	client := g.graphqlFunc(ctx, accessToken.Token, accessToken.Type)
+	client := g.graphqlFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	var query struct {
 		Search struct {
@@ -379,7 +380,7 @@ func (g *githubSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 func (g *githubSource) GetRepo(ctx context.Context, accessToken *AccessToken, owner, repo string) (*scc.Repo, error) {
 	result := &scc.Repo{}
 
-	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	gitRepo, err := githubClient.GetRepo(ctx, owner, repo)
 	if err != nil {
@@ -395,7 +396,7 @@ func (g *githubSource) GetRepo(ctx context.Context, accessToken *AccessToken, ow
 }
 
 func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken, owner, name string) error {
-	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	user, _, err := githubClient.GetUsers(ctx, "")
 	if err != nil {
@@ -419,7 +420,7 @@ func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 
 // InitialTag creates a tag for a repo, if no other tags are defined for it
 func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName, workflowFileName string) error {
-	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	repoPieces := strings.Split(fullName, "/")
 	if len(repoPieces) != 2 {
@@ -644,7 +645,7 @@ func (g *githubSource) hasSecret(ctx context.Context, githubClient interactions.
 }
 
 func (g *githubSource) GetDefaultBranch(ctx context.Context, accessToken *AccessToken, owner, repo string) (string, error) {
-	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type)
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	gitRepo, err := githubClient.GetRepo(ctx, owner, repo)
 	if err != nil {

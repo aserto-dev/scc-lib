@@ -2,14 +2,16 @@ package interactions
 
 import (
 	"context"
+	"time"
 
+	"github.com/aserto-dev/go-utils/cerr"
 	"github.com/google/go-github/v33/github"
 	"golang.org/x/oauth2"
 )
 
 //go:generate mockgen -source=githubintr.go -destination=mock_githubintr.go -package=interactions --build_flags=--mod=mod
 
-type GhIntr func(ctx context.Context, token, tokenType string) GithubIntr
+type GhIntr func(ctx context.Context, token, tokenType string, rateLimitTimeout, retryCount int) GithubIntr
 
 type GithubIntr interface {
 	GetUsers(context.Context, string) (*github.User, *github.Response, error)
@@ -28,11 +30,13 @@ type GithubIntr interface {
 }
 
 type githubInteraction struct {
-	Client *github.Client
+	Client            *github.Client
+	retryLimitTimeout int
+	retryCount        int
 }
 
 func NewGithubInteraction() GhIntr {
-	return func(ctx context.Context, token, tokenType string) GithubIntr {
+	return func(ctx context.Context, token, tokenType string, retryLimitTimeout, retryCount int) GithubIntr {
 		tokenSource := oauth2.StaticTokenSource(
 			&oauth2.Token{
 				AccessToken: token,
@@ -43,68 +47,176 @@ func NewGithubInteraction() GhIntr {
 
 		githubClient := github.NewClient(clientWithToken)
 
-		return &githubInteraction{Client: githubClient}
+		return &githubInteraction{
+			Client:            githubClient,
+			retryLimitTimeout: retryLimitTimeout,
+			retryCount:        retryCount,
+		}
 	}
 }
 
 func (gh *githubInteraction) GetUsers(ctx context.Context, username string) (*github.User, *github.Response, error) {
-	return gh.Client.Users.Get(ctx, username)
+	var user *github.User
+	var resp *github.Response
+	var err error
+
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		user, resp, err = gh.Client.Users.Get(ctx, username)
+		return err
+	})
+
+	return user, resp, err
 }
 
 func (gh *githubInteraction) ListRepoSecrets(ctx context.Context, owner, repo string, opts *github.ListOptions) (*github.Secrets, error) {
-	secrets, _, err := gh.Client.Actions.ListRepoSecrets(ctx, owner, repo, opts)
+	var secrets *github.Secrets
+	var err error
+
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		secrets, _, err = gh.Client.Actions.ListRepoSecrets(ctx, owner, repo, opts)
+		return err
+	})
 	return secrets, err
 }
 
 func (gh *githubInteraction) GetRepoPublicKey(ctx context.Context, org, repo string) (*github.PublicKey, error) {
-	key, _, err := gh.Client.Actions.GetRepoPublicKey(ctx, org, repo)
+	var key *github.PublicKey
+	var err error
+
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		key, _, err = gh.Client.Actions.GetRepoPublicKey(ctx, org, repo)
+		return err
+	})
+
 	return key, err
 }
 
 func (gh *githubInteraction) CreateOrUpdateRepoSecret(ctx context.Context, org, repo string, secret *github.EncryptedSecret) (*github.Response, error) {
-	return gh.Client.Actions.CreateOrUpdateRepoSecret(ctx, org, repo, secret)
+	var response *github.Response
+	var err error
+
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		response, err = gh.Client.Actions.CreateOrUpdateRepoSecret(ctx, org, repo, secret)
+		return err
+	})
+	return response, err
 }
 
 func (gh *githubInteraction) GetRepo(ctx context.Context, owner, repo string) (*github.Repository, error) {
-	repoResult, _, err := gh.Client.Repositories.Get(ctx, owner, repo)
+	var repoResult *github.Repository
+	var err error
+
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		repoResult, _, err = gh.Client.Repositories.Get(ctx, owner, repo)
+		return err
+	})
 	return repoResult, err
 }
 
 func (gh *githubInteraction) CreateRepo(ctx context.Context, owner string, repo *github.Repository) error {
-	_, _, err := gh.Client.Repositories.Create(ctx, owner, repo)
+	var err error
+
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		_, _, err = gh.Client.Repositories.Create(ctx, owner, repo)
+		return err
+	})
 	return err
 }
 
 func (gh *githubInteraction) ListRepoTags(ctx context.Context, owner, repo string, opts *github.ListOptions) ([]*github.RepositoryTag, error) {
-	tags, _, err := gh.Client.Repositories.ListTags(ctx, owner, repo, opts)
+	var tags []*github.RepositoryTag
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		tags, _, err = gh.Client.Repositories.ListTags(ctx, owner, repo, opts)
+		return err
+	})
 	return tags, err
 }
 
 func (gh *githubInteraction) GetRepoRef(ctx context.Context, owner, repo, ref string) (*github.Reference, *github.Response, error) {
-	return gh.Client.Git.GetRef(ctx, owner, repo, ref)
+	var reference *github.Reference
+	var response *github.Response
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		reference, response, err = gh.Client.Git.GetRef(ctx, owner, repo, ref)
+		return err
+	})
+	return reference, response, err
 }
 
 func (gh *githubInteraction) CreateRepoTag(ctx context.Context, owner, repo string, tag *github.Tag) (*github.Tag, error) {
-	tagResult, _, err := gh.Client.Git.CreateTag(ctx, owner, repo, tag)
+	var tagResult *github.Tag
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		tagResult, _, err = gh.Client.Git.CreateTag(ctx, owner, repo, tag)
+		return err
+	})
 	return tagResult, err
 }
 
 func (gh *githubInteraction) CreateRepoRef(ctx context.Context, owner, repo string, ref *github.Reference) error {
-	_, _, err := gh.Client.Git.CreateRef(ctx, owner, repo, ref)
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		_, _, err = gh.Client.Git.CreateRef(ctx, owner, repo, ref)
+		return err
+	})
 	return err
 }
 
 func (gh *githubInteraction) ListRepositoryWorkflowRuns(ctx context.Context, owner, repo string, opts *github.ListWorkflowRunsOptions) (*github.WorkflowRuns, error) {
-	runs, _, err := gh.Client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, opts)
+	var runs *github.WorkflowRuns
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		runs, _, err = gh.Client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, opts)
+		return err
+	})
 	return runs, err
 }
 
 func (gh *githubInteraction) CreateWorkflowDispatchEventByFileName(ctx context.Context, owner, repo, fileNameWorkflow string, event github.CreateWorkflowDispatchEventRequest) error {
-	_, err := gh.Client.Actions.CreateWorkflowDispatchEventByFileName(ctx, owner, repo, fileNameWorkflow, event)
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		_, err = gh.Client.Actions.CreateWorkflowDispatchEventByFileName(ctx, owner, repo, fileNameWorkflow, event)
+		return err
+	})
 	return err
 }
 
 func (gh *githubInteraction) CreateFile(ctx context.Context, owner, repo, path string, opts *github.RepositoryContentFileOptions) (*github.RepositoryContentResponse, error) {
-	contentResponse, _, err := gh.Client.Repositories.CreateFile(ctx, owner, repo, path, opts)
+	var contentResponse *github.RepositoryContentResponse
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		contentResponse, _, err = gh.Client.Repositories.CreateFile(ctx, owner, repo, path, opts)
+		return err
+	})
 	return contentResponse, err
+}
+
+func (gh *githubInteraction) withSecondaryRateLimitRetry(f func() error) (err error) {
+	timeout := time.Duration(gh.retryLimitTimeout) * time.Second
+	tryCount := 0
+retryLoop:
+	for t := time.After(timeout); ; {
+		select {
+		case <-t:
+			break retryLoop
+		default:
+		}
+
+		tryCount++
+		err = f()
+		if err == nil {
+			return nil
+		}
+		if ghErr, ok := err.(*github.AbuseRateLimitError); ok {
+			time.Sleep(*ghErr.RetryAfter)
+		} else {
+			return err
+		}
+		if tryCount >= gh.retryCount {
+			return cerr.ErrRetryTimeout.Msg("reached retry limit")
+		}
+	}
+
+	return cerr.ErrRetryTimeout.Err(err)
 }

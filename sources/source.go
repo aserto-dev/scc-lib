@@ -17,6 +17,8 @@ type AccessToken struct {
 type Config struct {
 	CreateRepoTimeoutSeconds int
 	WaitTagTimeoutSeconds    int
+	RateLimitRetryCount      int
+	RateLimitTimeoutSeconds  int
 }
 
 type Commit struct {
