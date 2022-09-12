@@ -5,6 +5,8 @@ go 1.17
 // replace github.com/aserto-dev/go-grpc => ../go-grpc
 // replace github.com/aserto-dev/go-utils => ../go-utils
 
+replace github.com/shurcooL/graphql => github.com/aserto-dev/graphql v0.0.0-20220912101612-be91b3b81112
+
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/aserto-dev/go-grpc v0.8.10
@@ -67,9 +69,9 @@ require (
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/zricethezav/gitleaks/v8 v8.3.0 // indirect
 	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/net v0.0.0-20220517181318-183a9ca12b87 // indirect
+	golang.org/x/net v0.0.0-20220907135653-1e95f45603a7 // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
-	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
