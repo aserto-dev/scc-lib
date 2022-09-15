@@ -5,7 +5,9 @@ go 1.17
 // replace github.com/aserto-dev/go-grpc => ../go-grpc
 // replace github.com/aserto-dev/go-utils => ../go-utils
 
-replace github.com/shurcooL/graphql => github.com/aserto-dev/graphql v0.0.0-20220912101612-be91b3b81112
+// replace github.com/shurcooL/graphql => ../graphql
+
+replace github.com/shurcooL/graphql => github.com/aserto-dev/graphql v0.0.0-20220915170350-c86cb2ff99e6
 
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible

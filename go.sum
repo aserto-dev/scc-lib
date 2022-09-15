@@ -51,8 +51,8 @@ github.com/aserto-dev/go-grpc v0.8.10 h1:s5HailNE93RUQgiFmYn/HiX/IpXllj3ozIhL93Y
 github.com/aserto-dev/go-grpc v0.8.10/go.mod h1:hog+zu5jE3+Y6t7m5PIBlavosmbd2qdF0BGZ9ueWK74=
 github.com/aserto-dev/go-utils v0.8.18 h1:OjWbNab77z3F3L9mlJ21tQoqxm90QHq+qa3FVaP1meI=
 github.com/aserto-dev/go-utils v0.8.18/go.mod h1:nzOCr7MNgmibduFAA2C00xCj5J/t8SL72tzZa8LwhBg=
-github.com/aserto-dev/graphql v0.0.0-20220912101612-be91b3b81112 h1:zIIWoe4sXn+RtxWIB9bFogDk7HgcdH2Zt1qudaDNlnk=
-github.com/aserto-dev/graphql v0.0.0-20220912101612-be91b3b81112/go.mod h1:RcqYZ84hkPD2sqUIXftPUrKVqmkZD2DAXcwTj8i08cI=
+github.com/aserto-dev/graphql v0.0.0-20220915170350-c86cb2ff99e6 h1:dIz/Yokh1WOJosibaBPb4y5x3trDHrG65a8IRAK1UNU=
+github.com/aserto-dev/graphql v0.0.0-20220915170350-c86cb2ff99e6/go.mod h1:RcqYZ84hkPD2sqUIXftPUrKVqmkZD2DAXcwTj8i08cI=
 github.com/aserto-dev/mage-loot v0.8.9 h1:gwr9zB2CrFPH4gkqtNE/+JmpdeYlUbgI0egFpMcIUio=
 github.com/aserto-dev/mage-loot v0.8.9/go.mod h1:16Q5Iq1e+W8J0DuCJx2LI0u7Bf7C3Z1r8ywnJZbhBGQ=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
