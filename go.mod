@@ -18,6 +18,7 @@ require (
 	github.com/golang/mock v1.4.4
 	github.com/google/go-github/v33 v33.0.0
 	github.com/google/wire v0.5.0
+	github.com/jpillora/backoff v1.0.0
 	github.com/magefile/mage v1.13.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.26.1
@@ -48,7 +49,6 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
-	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/kyokomi/emoji v2.2.4+incompatible // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
