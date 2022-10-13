@@ -508,6 +508,65 @@ func (g *githubSource) forceRerunWorkflow(ctx context.Context, githubClient inte
 	return nil
 }
 
+func (g *githubSource) CreateCommitOnBranchHTTP(ctx context.Context, accessToken *AccessToken, commit *Commit) error {
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
+
+	// Get referance to head and get commit & tree SHA
+	gitBranch, err := githubClient.GetBranch(ctx, commit.Owner, commit.Repo, commit.Branch, false)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get branch [%s] for owner [%s], on repo [%s]", commit.Branch, commit.Owner, commit.Repo)
+	}
+
+	fileBlobMode := "100644" //https://docs.github.com/en/rest/git/trees#create-a-tree
+
+	// create an new tree
+	entries := []*github.TreeEntry{}
+	for path, fileContent := range commit.Content {
+
+		fc := fileContent
+		tEntry := &github.TreeEntry{
+			Path:    &path,
+			Content: &fc,
+			Mode:    &fileBlobMode,
+		}
+		entries = append(entries, tEntry)
+	}
+
+	gitTree, err := githubClient.CreateTree(ctx, commit.Owner, commit.Repo, *gitBranch.Commit.Commit.Tree.SHA, entries)
+	if err != nil {
+		return errors.Wrap(err, "failed to create git tree")
+	}
+
+	// create new commit with the tree SHA
+	gitCommit, err := githubClient.CreateCommit(ctx, commit.Owner, commit.Repo, &github.Commit{
+		Message: &commit.Message,
+		Tree:    gitTree,
+		Parents: []*github.Commit{
+			{
+				SHA: gitBranch.Commit.SHA,
+			},
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to create commit")
+	}
+
+	headRef := fmt.Sprintf("refs/heads/%s", commit.Branch)
+	// update head
+	_, err = githubClient.UpdateRef(ctx, commit.Owner, commit.Repo, &github.Reference{
+		Object: &github.GitObject{
+			SHA: gitCommit.SHA,
+		},
+		Ref: &headRef,
+	}, false)
+
+	if err != nil {
+		return errors.Wrap(err, "failed to update ref")
+	}
+
+	return nil
+}
+
 func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *AccessToken, commit *Commit) error {
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{

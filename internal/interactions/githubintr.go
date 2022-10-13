@@ -27,6 +27,11 @@ type GithubIntr interface {
 	ListRepositoryWorkflowRuns(context.Context, string, string, *github.ListWorkflowRunsOptions) (*github.WorkflowRuns, error)
 	CreateWorkflowDispatchEventByFileName(context.Context, string, string, string, github.CreateWorkflowDispatchEventRequest) error
 	CreateFile(ctx context.Context, owner, repo, path string, opts *github.RepositoryContentFileOptions) (*github.RepositoryContentResponse, error)
+	CreateCommit(ctx context.Context, owner, repo string, commit *github.Commit) (*github.Commit, error)
+	GetBranch(ctx context.Context, owner, repo, branch string, followRedirects bool) (*github.Branch, error)
+	CreateBlob(ctx context.Context, owner string, repo string, blob *github.Blob) (*github.Blob, error)
+	CreateTree(ctx context.Context, owner string, repo string, baseTree string, entries []*github.TreeEntry) (*github.Tree, error)
+	UpdateRef(ctx context.Context, owner string, repo string, ref *github.Reference, force bool) (*github.Reference, error)
 }
 
 type githubInteraction struct {
@@ -190,6 +195,56 @@ func (gh *githubInteraction) CreateFile(ctx context.Context, owner, repo, path s
 		return err
 	})
 	return contentResponse, err
+}
+
+func (gh *githubInteraction) CreateCommit(ctx context.Context, owner, repo string, commit *github.Commit) (*github.Commit, error) {
+	var respCommit *github.Commit
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		respCommit, _, err = gh.Client.Git.CreateCommit(ctx, owner, repo, commit)
+		return err
+	})
+	return respCommit, err
+}
+
+func (gh *githubInteraction) GetBranch(ctx context.Context, owner, repo, branch string, followRedirects bool) (*github.Branch, error) {
+	var respBranch *github.Branch
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		respBranch, _, err = gh.Client.Repositories.GetBranch(ctx, owner, repo, branch)
+		return err
+	})
+	return respBranch, err
+}
+
+func (gh *githubInteraction) CreateBlob(ctx context.Context, owner, repo string, blob *github.Blob) (*github.Blob, error) {
+	var respBlob *github.Blob
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		respBlob, _, err = gh.Client.Git.CreateBlob(ctx, owner, repo, blob)
+		return err
+	})
+	return respBlob, err
+}
+
+func (gh *githubInteraction) CreateTree(ctx context.Context, owner, repo, baseTree string, entries []*github.TreeEntry) (*github.Tree, error) {
+	var respTree *github.Tree
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		respTree, _, err = gh.Client.Git.CreateTree(ctx, owner, repo, baseTree, entries)
+		return err
+	})
+	return respTree, err
+}
+
+func (gh *githubInteraction) UpdateRef(ctx context.Context, owner, repo string, ref *github.Reference, force bool) (*github.Reference, error) {
+	var respRef *github.Reference
+	var err error
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		respRef, _, err = gh.Client.Git.UpdateRef(ctx, owner, repo, ref, force)
+		return err
+	})
+	return respRef, err
 }
 
 func (gh *githubInteraction) withSecondaryRateLimitRetry(f func() error) (err error) {

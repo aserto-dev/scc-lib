@@ -35,6 +35,36 @@ func (m *MockGithubIntr) EXPECT() *MockGithubIntrMockRecorder {
 	return m.recorder
 }
 
+// CreateBlob mocks base method.
+func (m *MockGithubIntr) CreateBlob(ctx context.Context, owner, repo string, blob *github.Blob) (*github.Blob, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateBlob", ctx, owner, repo, blob)
+	ret0, _ := ret[0].(*github.Blob)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateBlob indicates an expected call of CreateBlob.
+func (mr *MockGithubIntrMockRecorder) CreateBlob(ctx, owner, repo, blob interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBlob", reflect.TypeOf((*MockGithubIntr)(nil).CreateBlob), ctx, owner, repo, blob)
+}
+
+// CreateCommit mocks base method.
+func (m *MockGithubIntr) CreateCommit(ctx context.Context, owner, repo string, commit *github.Commit) (*github.Commit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateCommit", ctx, owner, repo, commit)
+	ret0, _ := ret[0].(*github.Commit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateCommit indicates an expected call of CreateCommit.
+func (mr *MockGithubIntrMockRecorder) CreateCommit(ctx, owner, repo, commit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCommit", reflect.TypeOf((*MockGithubIntr)(nil).CreateCommit), ctx, owner, repo, commit)
+}
+
 // CreateFile mocks base method.
 func (m *MockGithubIntr) CreateFile(ctx context.Context, owner, repo, path string, opts *github.RepositoryContentFileOptions) (*github.RepositoryContentResponse, error) {
 	m.ctrl.T.Helper()
@@ -108,6 +138,21 @@ func (mr *MockGithubIntrMockRecorder) CreateRepoTag(arg0, arg1, arg2, arg3 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRepoTag", reflect.TypeOf((*MockGithubIntr)(nil).CreateRepoTag), arg0, arg1, arg2, arg3)
 }
 
+// CreateTree mocks base method.
+func (m *MockGithubIntr) CreateTree(ctx context.Context, owner, repo, baseTree string, entries []*github.TreeEntry) (*github.Tree, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateTree", ctx, owner, repo, baseTree, entries)
+	ret0, _ := ret[0].(*github.Tree)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateTree indicates an expected call of CreateTree.
+func (mr *MockGithubIntrMockRecorder) CreateTree(ctx, owner, repo, baseTree, entries interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTree", reflect.TypeOf((*MockGithubIntr)(nil).CreateTree), ctx, owner, repo, baseTree, entries)
+}
+
 // CreateWorkflowDispatchEventByFileName mocks base method.
 func (m *MockGithubIntr) CreateWorkflowDispatchEventByFileName(arg0 context.Context, arg1, arg2, arg3 string, arg4 github.CreateWorkflowDispatchEventRequest) error {
 	m.ctrl.T.Helper()
@@ -120,6 +165,21 @@ func (m *MockGithubIntr) CreateWorkflowDispatchEventByFileName(arg0 context.Cont
 func (mr *MockGithubIntrMockRecorder) CreateWorkflowDispatchEventByFileName(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorkflowDispatchEventByFileName", reflect.TypeOf((*MockGithubIntr)(nil).CreateWorkflowDispatchEventByFileName), arg0, arg1, arg2, arg3, arg4)
+}
+
+// GetBranch mocks base method.
+func (m *MockGithubIntr) GetBranch(ctx context.Context, owner, repo, branch string, followRedirects bool) (*github.Branch, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBranch", ctx, owner, repo, branch, followRedirects)
+	ret0, _ := ret[0].(*github.Branch)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBranch indicates an expected call of GetBranch.
+func (mr *MockGithubIntrMockRecorder) GetBranch(ctx, owner, repo, branch, followRedirects interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBranch", reflect.TypeOf((*MockGithubIntr)(nil).GetBranch), ctx, owner, repo, branch, followRedirects)
 }
 
 // GetRepo mocks base method.
@@ -227,4 +287,19 @@ func (m *MockGithubIntr) ListRepositoryWorkflowRuns(arg0 context.Context, arg1, 
 func (mr *MockGithubIntrMockRecorder) ListRepositoryWorkflowRuns(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRepositoryWorkflowRuns", reflect.TypeOf((*MockGithubIntr)(nil).ListRepositoryWorkflowRuns), arg0, arg1, arg2, arg3)
+}
+
+// UpdateRef mocks base method.
+func (m *MockGithubIntr) UpdateRef(ctx context.Context, owner, repo string, ref *github.Reference, force bool) (*github.Reference, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateRef", ctx, owner, repo, ref, force)
+	ret0, _ := ret[0].(*github.Reference)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateRef indicates an expected call of UpdateRef.
+func (mr *MockGithubIntrMockRecorder) UpdateRef(ctx, owner, repo, ref, force interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRef", reflect.TypeOf((*MockGithubIntr)(nil).UpdateRef), ctx, owner, repo, ref, force)
 }
