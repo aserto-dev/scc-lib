@@ -476,7 +476,7 @@ func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 	}
 
 	if workflowFileName != "" {
-		g.logger.Debug().Msgf("trigger manual dispatch for [%s] if a workflow run doesn't exist", workflowFileName)
+		g.logger.Warn().Msgf("trigger manual dispatch for [%s] if a workflow run doesn't exist", workflowFileName)
 		return g.forceRerunWorkflow(ctx, githubClient, owner, name, workflowFileName)
 	}
 	return nil
