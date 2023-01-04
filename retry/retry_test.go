@@ -1,24 +1,27 @@
-package retry
+package retry_test
 
 import (
 	"errors"
 	"testing"
 	"time"
 
+	"github.com/aserto-dev/scc-lib/retry"
 	"github.com/stretchr/testify/require"
 )
+
+var errNope = errors.New("nope")
 
 func TestRetry(t *testing.T) {
 	assert := require.New(t)
 
 	worked := false
-	err := Retry(5*time.Second, func(i int) error {
+	err := retry.Retry(5*time.Second, func(i int) error {
 		if i == 2 {
 			worked = true
 			return nil
 		}
 
-		return errors.New("nope")
+		return errNope
 	})
 
 	assert.NoError(err)
@@ -29,10 +32,10 @@ func TestRetryOnce(t *testing.T) {
 	assert := require.New(t)
 
 	var iteration int
-	err := Retry(0, func(i int) error {
+	err := retry.Retry(0, func(i int) error {
 		iteration = i
 
-		return errors.New("nope")
+		return errNope
 	})
 
 	assert.Error(err)
@@ -43,7 +46,7 @@ func TestRetryOnceNoErr(t *testing.T) {
 	assert := require.New(t)
 
 	var iteration int
-	err := Retry(0, func(i int) error {
+	err := retry.Retry(0, func(i int) error {
 		iteration = i
 
 		return nil

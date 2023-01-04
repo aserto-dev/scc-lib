@@ -1,4 +1,4 @@
-package sources
+package sources_test
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/aserto-dev/go-utils/cerr"
 	"github.com/aserto-dev/scc-lib/internal/interactions"
+	"github.com/aserto-dev/scc-lib/sources"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -25,6 +26,7 @@ const (
 	fileContent = "cover.out"
 )
 
+//nolint:gochecknoinits // test function in test namespace
 func init() {
 	t := &testing.T{}
 	ctrl := gomock.NewController(t)
@@ -47,7 +49,7 @@ func TestMockConstructor(t *testing.T) {
 	mockintr := newMockIntrFunc(ctrl)
 
 	// Act
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintr)
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintr)
 
 	// Assert
 	assert.NotNil(p)
@@ -56,8 +58,8 @@ func TestMockConstructor(t *testing.T) {
 func TestConstructor(t *testing.T) {
 	// Arrange
 	assert := require.New(t)
-	p := NewGitlab(&zerolog.Logger{}, &Config{})
-	token := &AccessToken{Token: ""}
+	p := sources.NewGitlab(&zerolog.Logger{}, &sources.Config{})
+	token := &sources.AccessToken{Token: ""}
 
 	// Act
 	err := p.ValidateConnection(context.Background(), token, []string{})
@@ -72,8 +74,8 @@ func TestValidateConnectionWithEmptyToken(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintr := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintr)
-	token := &AccessToken{Token: ""}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintr)
+	token := &sources.AccessToken{Token: ""}
 
 	// Act
 	err := p.ValidateConnection(context.Background(), token, []string{})
@@ -88,8 +90,8 @@ func TestValidateConnectionDoesntConnect(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	mockIntr.EXPECT().CurrentUser().Return(nil, nil, errors.New("no Connection"))
@@ -107,8 +109,8 @@ func TestValidateConnection(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	resp := &gitlab.Response{Response: &http.Response{StatusCode: 200}}
 
 	// Expect
@@ -126,8 +128,8 @@ func TestValidateConnectionErrorResponse(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	body := io.NopCloser(strings.NewReader("this is the body"))
 	resp := &gitlab.Response{Response: &http.Response{StatusCode: 404, Status: "Not Found", Body: body}}
 
@@ -148,8 +150,8 @@ func TestProfileConnectionWithEmptyToken(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintr := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintr)
-	token := &AccessToken{Token: ""}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintr)
+	token := &sources.AccessToken{Token: ""}
 
 	// Act
 	_, _, err := p.Profile(context.Background(), token)
@@ -164,8 +166,8 @@ func TestProfileDoesntConnect(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	mockIntr.EXPECT().CurrentUser().Return(nil, nil, errors.New("no Connection"))
@@ -183,8 +185,8 @@ func TestProfileReadOnePage(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	var projects []*gitlab.Project
 	gitlabUser := &gitlab.User{Username: "aserto-tests"}
 	projects = append(projects, &gitlab.Project{Name: "template-policy", Owner: gitlabUser, WebURL: "gitlab.com/template-policy"})
@@ -210,8 +212,8 @@ func TestProfileReadTwoPages(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	var projects []*gitlab.Project
 	var projectsSecondPage []*gitlab.Project
 	gitlabUser := &gitlab.User{Username: "aserto-tests"}
@@ -240,8 +242,8 @@ func TestListOrgsWithNilPage(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	// Act
 	_, _, err := p.ListOrgs(context.Background(), token, nil)
 
@@ -255,8 +257,8 @@ func TestListOrgsWithInvalidPageSize(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: -2}
 	// Act
 	_, _, err := p.ListOrgs(context.Background(), token, page)
@@ -271,8 +273,8 @@ func TestListOrgsWithStringPageToken(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: -1, Token: "next_token"}
 	// Act
 	_, _, err := p.ListOrgs(context.Background(), token, page)
@@ -287,8 +289,8 @@ func TestListOrgsAllInOnePage(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: -1, Token: ""}
 	var groups []*gitlab.Group
 	groups = append(groups, &gitlab.Group{Name: "tests", FullPath: "test7929"})
@@ -312,8 +314,8 @@ func TestListOrgsWithTwoPages(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: -1, Token: ""}
 	var groups []*gitlab.Group
 	var groupsSecondPage []*gitlab.Group
@@ -340,8 +342,8 @@ func TestListReposWithNilPage(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	// Act
 	_, _, err := p.ListRepos(context.Background(), token, "aserto-demo", nil)
 
@@ -355,8 +357,8 @@ func TestListReposWithInvalidPageSize(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: -2}
 	// Act
 	_, _, err := p.ListRepos(context.Background(), token, "aserto-demo", page)
@@ -371,8 +373,8 @@ func TestListReposWithStringPageToken(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: -1, Token: "next_token"}
 	// Act
 	_, _, err := p.ListRepos(context.Background(), token, "aserto-demo", page)
@@ -387,8 +389,8 @@ func TestListReposAllInOnePageWithUser(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: -1, Token: ""}
 	var projects []*gitlab.Project
 	gitlabUser := &gitlab.User{Username: "aserto-demo"}
@@ -414,8 +416,8 @@ func TestListReposAllInOnePageWithOrg(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: -1, Token: ""}
 	var projects []*gitlab.Project
 	gitlabUser := &gitlab.User{Username: "aserto-demo"}
@@ -441,8 +443,8 @@ func TestGetRepoFail(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	mockIntr.EXPECT().GetProject("aserto-dev/policy").Return(nil, nil, errors.New("repo not found"))
@@ -461,8 +463,8 @@ func TestGetRepo(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	proj := &gitlab.Project{Name: "policy", WebURL: "gitlab.com/policy"}
 
 	// Expect
@@ -482,8 +484,8 @@ func TestGetDefaultBranchFail(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	mockIntr.EXPECT().GetProject("aserto-dev/policy").Return(nil, nil, errors.New("repo not found"))
@@ -502,8 +504,8 @@ func TestGetDefaultBranch(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	proj := &gitlab.Project{Name: "policy", WebURL: "gitlab.com/policy", DefaultBranch: "main"}
 
 	// Expect
@@ -523,8 +525,8 @@ func TestCreateRepoAndGetNamespaceFails(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	mockIntr.EXPECT().GetNamespace("aserto-dev").Return(nil, errors.New("namespace not found"))
@@ -542,8 +544,8 @@ func TestCreateRepoFails(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	namespace := &gitlab.Namespace{ID: 1001}
 
 	// Expect
@@ -563,8 +565,8 @@ func TestCreateRepoProtectTagsFails(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	namespace := &gitlab.Namespace{ID: 1001}
 
 	// Expect
@@ -585,8 +587,8 @@ func TestCreateRepo(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	namespace := &gitlab.Namespace{ID: 1001}
 
 	// Expect
@@ -606,8 +608,8 @@ func TestInitialTagWithWrongFullName(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Act
 	err := p.InitialTag(context.Background(), token, "aserto-dev", "")
@@ -622,8 +624,8 @@ func TestInitialTagWithRepoAlreadyTagged(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "dsfcds"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "dsfcds"}
 	tags := []string{"v0.0.0"}
 	proj := &gitlab.Project{Name: "policy", WebURL: "gitlab.com/policy", TagList: tags}
 
@@ -642,8 +644,8 @@ func TestInitialTagFails(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "dsfcds"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "dsfcds"}
 	tags := []string{}
 	proj := &gitlab.Project{ID: 1001, Name: "policy", WebURL: "gitlab.com/policy", TagList: tags}
 
@@ -664,8 +666,8 @@ func TestInitialTag(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "dsfcds"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "dsfcds"}
 	tags := []string{}
 	proj := &gitlab.Project{ID: 1001, Name: "policy", WebURL: "gitlab.com/policy", TagList: tags}
 
@@ -685,8 +687,8 @@ func TestHasSecretFails(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	mockIntr.EXPECT().
@@ -707,8 +709,8 @@ func TestHasSecretNotFound(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	resp := &gitlab.Response{Response: &http.Response{StatusCode: 404}}
 
 	// Expect
@@ -729,8 +731,8 @@ func TestHasSecret(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	variable := &gitlab.ProjectVariable{}
 
 	// Expect
@@ -751,8 +753,8 @@ func TestAddSecretToRepoFails(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	mockIntr.EXPECT().
@@ -772,8 +774,8 @@ func TestAddSecretToRepoOverwriteSecretFalse(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	variable := &gitlab.ProjectVariable{}
 
 	// Expect
@@ -792,8 +794,8 @@ func TestAddSecretToRepoOverwriteSecretTrue(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	variable := &gitlab.ProjectVariable{}
 
 	// Expect
@@ -812,8 +814,8 @@ func TestAddSecretToRepoNewVariable(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	resp := &gitlab.Response{Response: &http.Response{StatusCode: 404}}
 
 	// Expect
@@ -832,11 +834,11 @@ func TestCommitOnBranchFails(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	content := make(map[string]string)
 	content[file] = fileContent
-	commit := Commit{
+	commit := sources.Commit{
 		Branch:  "main",
 		Message: "Some commit",
 		Owner:   "aserto-dev",
@@ -861,11 +863,11 @@ func TestCommitOnBranch(t *testing.T) {
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	mockintrFunc := newMockIntrFunc(ctrl)
-	p := NewTestGitlab(ctrl, &zerolog.Logger{}, &Config{}, mockintrFunc)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	content := make(map[string]string)
 	content[file] = fileContent
-	commit := Commit{
+	commit := sources.Commit{
 		Branch:  "main",
 		Message: "Some commit",
 		Owner:   "aserto-dev",

@@ -2,7 +2,9 @@ package interactions
 
 import (
 	"context"
+	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/shurcooL/graphql"
 	"golang.org/x/oauth2"
 )
@@ -28,7 +30,18 @@ func NewGraphqInteraction() GraphQLIntr {
 				TokenType:   tokenType,
 			},
 		)
-		httpClient := oauth2.NewClient(ctx, src)
+
+		retryClient := retryablehttp.NewClient()
+		retryClient.Backoff = retryablehttp.DefaultBackoff
+		retryClient.RetryWaitMin = time.Second * 1
+		retryClient.RetryWaitMax = time.Second * time.Duration(retryLimitTimeout)
+		retryClient.RetryMax = retryCount
+
+		httpClient := oauth2.NewClient(
+			context.WithValue(ctx, oauth2.HTTPClient, retryClient.StandardClient()),
+			src,
+		)
+
 		client := graphql.NewClient("https://api.github.com/graphql", httpClient)
 
 		return &graphqlInteraction{Client: client, retryLimitTimeout: retryLimitTimeout, retryCount: retryCount}
@@ -36,5 +49,5 @@ func NewGraphqInteraction() GraphQLIntr {
 }
 
 func (g *graphqlInteraction) Query(ctx context.Context, query interface{}, vars map[string]interface{}) error {
-	return g.Client.QueryRetry(ctx, query, vars, g.retryLimitTimeout, g.retryCount)
+	return g.Client.Query(ctx, query, vars)
 }

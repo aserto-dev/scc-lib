@@ -21,7 +21,7 @@ var (
 	gitlabCI        = "/-/pipelines"
 )
 
-// gitlabSource deals with source management on gitlab.com
+// gitlabSource deals with source management on gitlab.com.
 type gitlabSource struct {
 	logger           *zerolog.Logger
 	cfg              *Config

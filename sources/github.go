@@ -29,7 +29,7 @@ var (
 	githubCI        = "/actions"
 )
 
-// githubSource deals with source management on github.com
+// githubSource deals with source management on github.com.
 type githubSource struct {
 	logger           *zerolog.Logger
 	cfg              *Config
@@ -82,7 +82,7 @@ func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *Acce
 	return nil
 }
 
-// Profile returns the username of the user that owns the token, and its associated repos
+// Profile returns the username of the user that owns the token, and its associated repos.
 func (g *githubSource) Profile(ctx context.Context, accessToken *AccessToken) (string, []*scc.Repo, error) {
 	client := g.graphqlFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
@@ -205,7 +205,7 @@ func (g *githubSource) AddSecretToRepo(ctx context.Context, accessToken *AccessT
 	return nil
 }
 
-// ListOrgs lists all orgs the user is a part of
+// ListOrgs lists all orgs the user is a part of.
 func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, page *api.PaginationRequest) ([]*api.SccOrg, *api.PaginationResponse, error) {
 	if page == nil {
 		return nil, nil, errors.New("page must not be empty")
@@ -287,7 +287,7 @@ func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 	return result, resp, nil
 }
 
-// ListRepos lists all repos for an owner
+// ListRepos lists all repos for an owner.
 func (g *githubSource) ListRepos(ctx context.Context, accessToken *AccessToken, owner string, page *api.PaginationRequest) ([]*scc.Repo, *api.PaginationResponse, error) {
 	if page == nil {
 		return nil, nil, errors.New("page must not be empty")
@@ -418,7 +418,7 @@ func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 	return nil
 }
 
-// InitialTag creates a tag for a repo, if no other tags are defined for it
+// InitialTag creates a tag for a repo, if no other tags are defined for it.
 func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName, workflowFileName string) error {
 	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
@@ -547,7 +547,7 @@ func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 		"expression":    githubv4.String(fmt.Sprintf("HEAD:%s", filePath)),
 	}
 
-	var emptyRepoErr error
+	var emptyRepoErr = errors.New("repository is not initialized")
 
 	err := retry.Retry(time.Second*time.Duration(g.cfg.CreateRepoTimeoutSeconds), func(i int) error {
 		err := client.Query(ctx, &query, variables)
@@ -556,7 +556,7 @@ func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 		}
 		ref := query.Repository.Ref.Target.Oid
 		if ref == "" {
-			emptyRepoErr = fmt.Errorf("repository [%s/%s] is not initialized", commit.Owner, commit.Repo)
+			emptyRepoErr = fmt.Errorf("%w : [%s/%s]", emptyRepoErr, commit.Owner, commit.Repo)
 			return nil
 		}
 		configContent := query.Repository.Object.Blob.Text
@@ -655,13 +655,17 @@ func (g *githubSource) GetDefaultBranch(ctx context.Context, accessToken *Access
 	return *gitRepo.DefaultBranch, nil
 }
 
+var errUnableToDecodePKey = errors.New("base64.StdEncoding.DecodeString was unable to decode public key")
+
 func encryptSecretWithPublicKey(publicKey *github.PublicKey, secretValue string) (string, error) {
 	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey.GetKey())
 	if err != nil {
-		return "", fmt.Errorf("base64.StdEncoding.DecodeString was unable to decode public key: %v", err)
+		return "", fmt.Errorf("%w : %v", errUnableToDecodePKey, err)
 	}
+
 	var pkRaw [32]byte
-	// publiKey.GetKey() can return empty string here, should I return err in this case?
+
+	// publicKey.GetKey() can return empty string here, should I return err in this case?
 	if len(decodedPublicKey) >= 32 {
 		copy(pkRaw[:], decodedPublicKey[0:32])
 	}
