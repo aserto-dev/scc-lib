@@ -1,4 +1,4 @@
-package sources
+package sources_test
 
 import (
 	"context"
@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	cerr "github.com/aserto-dev/errors"
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
-	"github.com/aserto-dev/go-utils/cerr"
 	"github.com/aserto-dev/scc-lib/internal/interactions"
+	"github.com/aserto-dev/scc-lib/sources"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/google/go-github/v33/github"
 	"github.com/pkg/errors"
@@ -29,11 +30,13 @@ type testInteractions struct {
 	mockGithub          *interactions.MockGithubIntr
 	mockGraphql         *interactions.MockGraphqlIntr
 	mockGithubIntrFunc  interactions.GhIntr
-	mockGraphqlIntrFunc interactions.GraphQLIntr
+	mockGraphqlIntrFunc interactions.GqlIntr
 }
 
 func setup(t *testing.T) testInteractions {
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	mockGithubIntr := interactions.NewMockGithubIntr(ctrl)
 	mockGraphqlIntr := interactions.NewMockGraphqlIntr(ctrl)
 
@@ -58,7 +61,7 @@ func TestMockGithubConstructor(t *testing.T) {
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
 
 	// Act
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
 
 	// Assert
 	assert.NotNil(p)
@@ -67,8 +70,8 @@ func TestMockGithubConstructor(t *testing.T) {
 func TestGithubConstructor(t *testing.T) {
 	// Arrange
 	assert := require.New(t)
-	p := NewGithub(&zerolog.Logger{}, &Config{})
-	token := &AccessToken{Token: ""}
+	p := sources.NewGithub(&zerolog.Logger{}, &sources.Config{})
+	token := &sources.AccessToken{Token: ""}
 
 	// Act
 	err := p.ValidateConnection(context.Background(), token, []string{})
@@ -84,8 +87,8 @@ func TestValidateConnectionGetUsersFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().GetUsers(gomock.Any(), gomock.Any()).Return(nil, nil, errors.New("no Connection"))
@@ -104,8 +107,8 @@ func TestGithubValidateConnectionErrorResponse(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	body := io.NopCloser(strings.NewReader("this is the body"))
 	resp := &github.Response{Response: &http.Response{StatusCode: 404, Status: "Not Found", Body: body}}
 
@@ -127,8 +130,8 @@ func TestGithubValidateConnection(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	resp := &github.Response{Response: &http.Response{StatusCode: 200}}
 
 	// Expect
@@ -147,8 +150,8 @@ func TestGithubValidateConnectionScopes(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	resp := &github.Response{Response: &http.Response{StatusCode: 200, Header: http.Header{}}}
 	resp.Response.Header.Set("X-OAuth-Scopes", "repo,user,admin:org")
 
@@ -168,8 +171,8 @@ func TestGithubProfileQueryFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGraphql.EXPECT().Query(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("boom"))
@@ -190,8 +193,8 @@ func TestGithubProfile(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGraphql.EXPECT().Query(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
@@ -211,8 +214,8 @@ func TestGithubHasSecretFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().ListRepoSecrets(gomock.Any(), githubUsername, policyRepo, gomock.Any()).Return(nil, errors.New("Failed to get secret"))
@@ -232,11 +235,11 @@ func TestGithubHasSecretTrue(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
 	secret := &github.Secret{Name: "ASERTO_PUSH_KEY"}
 	secrets := []*github.Secret{secret}
 	result := &github.Secrets{Secrets: secrets}
-	token := &AccessToken{Token: "sometokenvalue"}
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().ListRepoSecrets(gomock.Any(), githubUsername, policyRepo, gomock.Any()).Return(result, nil)
@@ -255,11 +258,11 @@ func TestGithubHasSecretFalse(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
 	secret := &github.Secret{Name: "other_secret"}
 	secrets := []*github.Secret{secret}
 	result := &github.Secrets{Secrets: secrets}
-	token := &AccessToken{Token: "sometokenvalue"}
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().ListRepoSecrets(gomock.Any(), githubUsername, policyRepo, gomock.Any()).Return(result, nil)
@@ -278,8 +281,8 @@ func TestAddSecretToRepoNoOrg(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Act
 	err := p.AddSecretToRepo(context.Background(), token, "", policyRepo, "ASERTO_PUSH_KEY", "value", false)
@@ -295,8 +298,8 @@ func TestAddSecretToRepoNoRepo(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Act
 	err := p.AddSecretToRepo(context.Background(), token, githubUsername, "", "ASERTO_PUSH_KEY", "value", false)
@@ -312,8 +315,8 @@ func TestAddSecretToRepoGetPublicKeyFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().GetRepoPublicKey(gomock.Any(), githubUsername, policyRepo).Return(nil, errors.New("failed to connect"))
@@ -332,11 +335,11 @@ func TestAddSecretToRepoSecretExistsOverrideFalse(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
 	secret := &github.Secret{Name: "ASERTO_PUSH_KEY"}
 	secrets := []*github.Secret{secret}
 	result := &github.Secrets{Secrets: secrets}
-	token := &AccessToken{Token: "sometokenvalue"}
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().GetRepoPublicKey(gomock.Any(), githubUsername, policyRepo).Return(&github.PublicKey{}, nil)
@@ -347,7 +350,7 @@ func TestAddSecretToRepoSecretExistsOverrideFalse(t *testing.T) {
 
 	// Assert
 	assert.Error(err)
-	assert.Equal(err.Error(), "E10022 repo has already been connected to a policy")
+	assert.Equal(err.Error(), "E10022 repo has already been connected to a policy: you’re trying to link to an existing repository that already has a secret. Please consider overwriting the Aserto push secret.")
 }
 
 func TestAddSecretToRepoSecretExistsOverrideTrueCreateFails(t *testing.T) {
@@ -356,11 +359,11 @@ func TestAddSecretToRepoSecretExistsOverrideTrueCreateFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
 	secret := &github.Secret{Name: "ASERTO_PUSH_KEY"}
 	secrets := []*github.Secret{secret}
 	result := &github.Secrets{Secrets: secrets}
-	token := &AccessToken{Token: "sometokenvalue"}
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	body := io.NopCloser(strings.NewReader("this is the body"))
 	resp := &github.Response{Response: &http.Response{StatusCode: 404, Status: "Not Found", Body: body}}
 
@@ -385,11 +388,11 @@ func TestAddSecretToRepoSecretExistsOverrideTrueCreate(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
 	secret := &github.Secret{Name: "ASERTO_PUSH_KEY"}
 	secrets := []*github.Secret{secret}
 	result := &github.Secrets{Secrets: secrets}
-	token := &AccessToken{Token: "sometokenvalue"}
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().GetRepoPublicKey(gomock.Any(), githubUsername, policyRepo).Return(&github.PublicKey{}, nil)
@@ -411,8 +414,8 @@ func TestListOrgsPageNil(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Act
 	orgs, resp, err := p.ListOrgs(context.Background(), token, nil)
@@ -430,8 +433,8 @@ func TestListOrgsPageSizeInvalid(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: int32(-2)}
 
 	// Act
@@ -450,8 +453,8 @@ func TestGithubListOrgsQueryFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: int32(-1), Token: ""}
 
 	// Expect
@@ -473,8 +476,8 @@ func TestGithubListOrgs(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: int32(-1), Token: ""}
 
 	// Expect
@@ -496,8 +499,8 @@ func TestListReposPageNil(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Act
 	repos, resp, err := p.ListRepos(context.Background(), token, githubUsername, nil)
@@ -515,8 +518,8 @@ func TestListReposPageSizeInvalid(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: int32(-2)}
 
 	// Act
@@ -535,8 +538,8 @@ func TestListReposQueryFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: int32(-1)}
 
 	// Expect
@@ -558,8 +561,8 @@ func TestListRepos(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: int32(-1)}
 
 	// Expect
@@ -581,8 +584,8 @@ func TestGetRepoFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().GetRepo(gomock.Any(), githubUsername, policyRepo).Return(nil, errors.New("no Connection"))
@@ -602,8 +605,8 @@ func TestGithubGetRepo(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	user := githubUsername
 	searchedRepo := policyRepo
 	URL := policyURL
@@ -629,8 +632,8 @@ func TestGithubCreateRepoGetUsersFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().GetUsers(gomock.Any(), gomock.Any()).Return(nil, nil, errors.New("boom"))
@@ -649,8 +652,8 @@ func TestGithubCreateFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	username := githubUsername
 	user := &github.User{Login: &username}
 
@@ -672,8 +675,8 @@ func TestGithubCreate(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	username := githubUsername
 	user := &github.User{Login: &username}
 
@@ -694,8 +697,8 @@ func TestGetDefultRepoFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().GetRepo(gomock.Any(), githubUsername, policyRepo).Return(nil, errors.New("no Connection"))
@@ -709,14 +712,14 @@ func TestGetDefultRepoFails(t *testing.T) {
 	assert.Empty(repo)
 }
 
-func TestGithubGetDefultRepo(t *testing.T) {
+func TestGithubGetDefaultRepo(t *testing.T) {
 	// Arrange
 	assert := require.New(t)
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	defaultBr := defaultBranch
 	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
 
@@ -738,8 +741,8 @@ func TestGithubInitialTagWithInvalidRepoPath(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Act
 	err := p.InitialTag(context.Background(), token, "policy", "build-workflow.yaml")
@@ -755,8 +758,8 @@ func TestGithubInitialTagAndGetRepoFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().GetRepo(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("not found"))
@@ -775,8 +778,8 @@ func TestGithubInitialTagAndListRepoTagsFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().GetRepo(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
@@ -798,8 +801,8 @@ func TestGithubInitialTagAndRepoHasTag(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	repoTag := &github.RepositoryTag{}
 
 	// Expect
@@ -821,8 +824,8 @@ func TestGithubInitialTagAndGetRepoRefFails(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	defaultBr := defaultBranch
 	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
 	resp := &github.Response{Response: &http.Response{StatusCode: 404}}
@@ -850,15 +853,15 @@ func TestGithubInitialTag(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	defaultBr := defaultBranch
 	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
 	resp := &github.Response{Response: &http.Response{StatusCode: 200}}
 	sha := "somesha"
 	obj := &github.GitObject{SHA: &sha}
 	ref := &github.Reference{Object: obj}
-	tag := &github.Tag{Object: obj, Tag: &defaultTag}
+	tag := &github.Tag{Object: obj, Tag: sources.DefaultTag()}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().GetRepo(gomock.Any(), gomock.Any(), gomock.Any()).Return(githubRepo, nil)
@@ -890,15 +893,15 @@ func TestGithubInitialTagRetriggerDoesNotWork(t *testing.T) {
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	defaultBr := defaultBranch
 	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
 	resp := &github.Response{Response: &http.Response{StatusCode: 200}}
 	sha := "somesh"
 	obj := &github.GitObject{SHA: &sha}
 	ref := &github.Reference{Object: obj}
-	tag := &github.Tag{Object: obj, Tag: &defaultTag}
+	tag := &github.Tag{Object: obj, Tag: sources.DefaultTag()}
 
 	// Expect
 	tstInteraction.mockGithub.EXPECT().GetRepo(gomock.Any(), gomock.Any(), gomock.Any()).Return(githubRepo, nil)
@@ -925,21 +928,21 @@ func TestGithubInitialTagRetriggerDoesNotWork(t *testing.T) {
 	assert.Equal(err.Error(), "boom")
 }
 
-func TestGithubInitialTagWorkflowRunsInstanly(t *testing.T) {
+func TestGithubInitialTagWorkflowRunsInstantly(t *testing.T) {
 	// Arrange
 	assert := require.New(t)
 	tstInteraction := setup(t)
 	mockintrGh := tstInteraction.mockGithubIntrFunc
 	mockintrGQL := tstInteraction.mockGraphqlIntrFunc
-	p := NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &Config{CreateRepoTimeoutSeconds: 0, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
-	token := &AccessToken{Token: "sometokenvalue"}
+	p := sources.NewTestGithub(tstInteraction.ctrl, &zerolog.Logger{}, &sources.Config{CreateRepoTimeoutSeconds: 0, WaitTagTimeoutSeconds: 0}, mockintrGh, mockintrGQL)
+	token := &sources.AccessToken{Token: "sometokenvalue"}
 	defaultBr := defaultBranch
 	githubRepo := &github.Repository{DefaultBranch: &defaultBr}
 	resp := &github.Response{Response: &http.Response{StatusCode: 200}}
 	sha := "someshh"
 	obj := &github.GitObject{SHA: &sha}
 	ref := &github.Reference{Object: obj}
-	tag := &github.Tag{Object: obj, Tag: &defaultTag}
+	tag := &github.Tag{Object: obj, Tag: sources.DefaultTag()}
 	id := int64(345)
 	run := &github.WorkflowRun{ID: &id}
 	runs := &github.WorkflowRuns{

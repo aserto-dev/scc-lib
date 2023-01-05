@@ -2,13 +2,13 @@
 go:
   sver:
     importPath: "github.com/aserto-dev/sver/cmd/sver"
-    version: "v1.3.9"
+    version: "v1.3.11"
   golangci-lint:
     importPath: "github.com/golangci/golangci-lint/cmd/golangci-lint"
-    version: "v1.44.2"
+    version: "v1.50.1"
   gotestsum:
     importPath: "gotest.tools/gotestsum"
-    version: "v1.7.0"
+    version: "v1.8.2"
   mockgen:
     importPath: github.com/golang/mock/mockgen
     version: "v1.6.0"

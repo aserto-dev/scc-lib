@@ -26,17 +26,17 @@ func NewGitlab(log *zerolog.Logger, cfg *Config) Source {
 
 func NewGithub(log *zerolog.Logger, cfg *Config) Source {
 	ghIntr := interactions.NewGithubInteraction()
-	graphQLIntr := interactions.NewGraphqInteraction()
+	gqlIntr := interactions.NewGraphqlInteraction()
 	sourcesGithubSource := &githubSource{
 		logger:           log,
 		cfg:              cfg,
 		interactionsFunc: ghIntr,
-		graphqlFunc:      graphQLIntr,
+		graphqlFunc:      gqlIntr,
 	}
 	return sourcesGithubSource
 }
 
-func NewTestGithub(ctrl *gomock.Controller, log *zerolog.Logger, cfg *Config, pager interactions.GhIntr, graphql interactions.GraphQLIntr) Source {
+func NewTestGithub(ctrl *gomock.Controller, log *zerolog.Logger, cfg *Config, pager interactions.GhIntr, graphql interactions.GqlIntr) Source {
 	sourcesGithubSource := &githubSource{
 		logger:           log,
 		cfg:              cfg,
