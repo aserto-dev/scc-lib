@@ -25,13 +25,13 @@ func NewGithub(log *zerolog.Logger, cfg *Config) Source {
 		wire.Struct(new(githubSource), "*"),
 		wire.Bind(new(Source), new(*githubSource)),
 		interactions.NewGithubInteraction,
-		interactions.NewGraphqInteraction,
+		interactions.NewGraphqlInteraction,
 	)
 
 	return &githubSource{}
 }
 
-func NewTestGithub(ctrl *gomock.Controller, log *zerolog.Logger, cfg *Config, pager interactions.GhIntr, graphql interactions.GraphQLIntr) Source {
+func NewTestGithub(ctrl *gomock.Controller, log *zerolog.Logger, cfg *Config, pager interactions.GhIntr, graphql interactions.GqlIntr) Source {
 	wire.Build(
 		wire.Struct(new(githubSource), "*"),
 		wire.Bind(new(Source), new(*githubSource)),

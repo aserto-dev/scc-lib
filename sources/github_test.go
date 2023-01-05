@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	cerr "github.com/aserto-dev/errors"
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
-	"github.com/aserto-dev/go-utils/cerr"
 	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/aserto-dev/scc-lib/sources"
 	gomock "github.com/golang/mock/gomock"
@@ -30,11 +30,13 @@ type testInteractions struct {
 	mockGithub          *interactions.MockGithubIntr
 	mockGraphql         *interactions.MockGraphqlIntr
 	mockGithubIntrFunc  interactions.GhIntr
-	mockGraphqlIntrFunc interactions.GraphQLIntr
+	mockGraphqlIntrFunc interactions.GqlIntr
 }
 
 func setup(t *testing.T) testInteractions {
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	mockGithubIntr := interactions.NewMockGithubIntr(ctrl)
 	mockGraphqlIntr := interactions.NewMockGraphqlIntr(ctrl)
 
@@ -348,7 +350,7 @@ func TestAddSecretToRepoSecretExistsOverrideFalse(t *testing.T) {
 
 	// Assert
 	assert.Error(err)
-	assert.Equal(err.Error(), "E10022 repo has already been connected to a policy")
+	assert.Equal(err.Error(), "E10022 repo has already been connected to a policy: you’re trying to link to an existing repository that already has a secret. Please consider overwriting the Aserto push secret.")
 }
 
 func TestAddSecretToRepoSecretExistsOverrideTrueCreateFails(t *testing.T) {
@@ -710,7 +712,7 @@ func TestGetDefultRepoFails(t *testing.T) {
 	assert.Empty(repo)
 }
 
-func TestGithubGetDefultRepo(t *testing.T) {
+func TestGithubGetDefaultRepo(t *testing.T) {
 	// Arrange
 	assert := require.New(t)
 	tstInteraction := setup(t)

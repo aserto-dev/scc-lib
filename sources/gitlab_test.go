@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	cerr "github.com/aserto-dev/errors"
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
-	"github.com/aserto-dev/go-utils/cerr"
 	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/aserto-dev/scc-lib/sources"
 	gomock "github.com/golang/mock/gomock"
@@ -786,7 +786,7 @@ func TestAddSecretToRepoOverwriteSecretFalse(t *testing.T) {
 
 	// Assert
 	assert.Error(err)
-	assert.Equal(err.Error(), "E10022 repo has already been connected to a policy")
+	assert.Equal(err.Error(), "E10022 repo has already been connected to a policy: you're trying to link to an existing repository that already has a secret. Please consider overwriting the Aserto push secret.")
 }
 
 func TestAddSecretToRepoOverwriteSecretTrue(t *testing.T) {

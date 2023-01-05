@@ -34,7 +34,7 @@ type githubSource struct {
 	logger           *zerolog.Logger
 	cfg              *Config
 	interactionsFunc interactions.GhIntr
-	graphqlFunc      interactions.GraphQLIntr
+	graphqlFunc      interactions.GqlIntr
 }
 
 func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *AccessToken, requiredScopes []string) error {
