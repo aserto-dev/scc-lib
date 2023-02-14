@@ -27,6 +27,8 @@ import (
 var (
 	_        Source = &githubSource{}
 	githubCI        = "/actions"
+
+	ErrEmptyRepo = errors.New("repository is not initialized")
 )
 
 // githubSource deals with source management on github.com.
@@ -547,18 +549,17 @@ func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 		"expression":    githubv4.String(fmt.Sprintf("HEAD:%s", filePath)),
 	}
 
-	var emptyRepoErr = errors.New("repository is not initialized")
-
 	err := retry.Retry(time.Second*time.Duration(g.cfg.CreateRepoTimeoutSeconds), func(i int) error {
 		err := client.Query(ctx, &query, variables)
 		if err != nil {
 			return errors.Wrap(err, "failed to query latest commit")
 		}
+
 		ref := query.Repository.Ref.Target.Oid
 		if ref == "" {
-			emptyRepoErr = fmt.Errorf("%w : [%s/%s]", emptyRepoErr, commit.Owner, commit.Repo)
-			return nil
+			return errors.Wrapf(ErrEmptyRepo, "%s/%s", commit.Owner, commit.Repo)
 		}
+
 		configContent := query.Repository.Object.Blob.Text
 
 		var mutation struct {
@@ -582,10 +583,6 @@ func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 
 		return nil
 	})
-
-	if emptyRepoErr != nil {
-		return emptyRepoErr
-	}
 
 	return err
 }
