@@ -122,6 +122,21 @@ func (mr *MockGithubIntrMockRecorder) CreateWorkflowDispatchEventByFileName(arg0
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorkflowDispatchEventByFileName", reflect.TypeOf((*MockGithubIntr)(nil).CreateWorkflowDispatchEventByFileName), arg0, arg1, arg2, arg3, arg4)
 }
 
+// GetCommit mocks base method.
+func (m *MockGithubIntr) GetCommit(ctx context.Context, owner, repo, sha string) (*github.Commit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommit", ctx, owner, repo, sha)
+	ret0, _ := ret[0].(*github.Commit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommit indicates an expected call of GetCommit.
+func (mr *MockGithubIntrMockRecorder) GetCommit(ctx, owner, repo, sha interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommit", reflect.TypeOf((*MockGithubIntr)(nil).GetCommit), ctx, owner, repo, sha)
+}
+
 // GetRepo mocks base method.
 func (m *MockGithubIntr) GetRepo(arg0 context.Context, arg1, arg2 string) (*github.Repository, error) {
 	m.ctrl.T.Helper()

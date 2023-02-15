@@ -491,3 +491,7 @@ func (g *gitlabSource) GetDefaultBranch(ctx context.Context, accessToken *Access
 
 	return proj.DefaultBranch, nil
 }
+
+func (g *gitlabSource) WaitForCommit(ctx context.Context, accessToken *AccessToken, owner, repo, message string) error {
+	return errors.New("Not implemented")
+}

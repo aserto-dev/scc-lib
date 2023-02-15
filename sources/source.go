@@ -41,4 +41,5 @@ type Source interface {
 	InitialTag(ctx context.Context, accessToken *AccessToken, fullName, workflowFileName string) error
 	CreateCommitOnBranch(ctx context.Context, accessToken *AccessToken, commit *Commit) error
 	GetDefaultBranch(ctx context.Context, accessToken *AccessToken, owner, repo string) (string, error)
+	WaitForCommit(ctx context.Context, accessToken *AccessToken, owner, repo, message string) error
 }

@@ -28,7 +28,8 @@ var (
 	_        Source = &githubSource{}
 	githubCI        = "/actions"
 
-	ErrEmptyRepo = errors.New("repository is not initialized")
+	ErrEmptyRepo      = errors.New("repository is not initialized")
+	ErrCommitNotFound = errors.New("commit not found")
 )
 
 // githubSource deals with source management on github.com.
@@ -650,6 +651,30 @@ func (g *githubSource) GetDefaultBranch(ctx context.Context, accessToken *Access
 	}
 
 	return *gitRepo.DefaultBranch, nil
+}
+
+func (g *githubSource) WaitForCommit(ctx context.Context, accessToken *AccessToken, owner, repo, message string) error {
+	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
+
+	err := retry.Retry(time.Duration(g.cfg.WaitTagTimeoutSeconds)*time.Second, func(i int) error {
+		ref, _, err := githubClient.GetRepoRef(ctx, owner, repo, "heads/main")
+		if err != nil {
+			return err
+		}
+
+		commit, err := githubClient.GetCommit(ctx, owner, repo, *ref.Object.SHA)
+		if err != nil {
+			return err
+		}
+
+		if *commit.Message != message {
+			return errors.Wrapf(ErrCommitNotFound, "last commit is not %s", message)
+		}
+
+		return nil
+	})
+
+	return err
 }
 
 var errUnableToDecodePKey = errors.New("base64.StdEncoding.DecodeString was unable to decode public key")
