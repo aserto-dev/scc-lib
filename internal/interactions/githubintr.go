@@ -27,6 +27,7 @@ type GithubIntr interface {
 	ListRepositoryWorkflowRuns(context.Context, string, string, *github.ListWorkflowRunsOptions) (*github.WorkflowRuns, error)
 	CreateWorkflowDispatchEventByFileName(context.Context, string, string, string, github.CreateWorkflowDispatchEventRequest) error
 	CreateFile(ctx context.Context, owner, repo, path string, opts *github.RepositoryContentFileOptions) (*github.RepositoryContentResponse, error)
+	GetCommit(ctx context.Context, owner, repo, sha string) (*github.Commit, error)
 }
 
 type githubInteraction struct {
@@ -53,6 +54,18 @@ func NewGithubInteraction() GhIntr {
 			retryCount:        retryCount,
 		}
 	}
+}
+
+func (gh *githubInteraction) GetCommit(ctx context.Context, owner, repo, sha string) (*github.Commit, error) {
+	var err error
+	var commit *github.Commit
+
+	err = gh.withSecondaryRateLimitRetry(func() error {
+		commit, _, err = gh.Client.Git.GetCommit(ctx, owner, repo, sha)
+		return err
+	})
+
+	return commit, err
 }
 
 func (gh *githubInteraction) GetUsers(ctx context.Context, username string) (*github.User, *github.Response, error) {
