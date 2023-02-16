@@ -550,6 +550,14 @@ func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 		"expression":    githubv4.String(fmt.Sprintf("HEAD:%s", filePath)),
 	}
 
+	var mutation struct {
+		CreateCommitOnBranch struct {
+			Commit struct {
+				OID string
+			}
+		} `graphql:"createCommitOnBranch(input: $input)"`
+	}
+
 	err := retry.Retry(time.Second*time.Duration(g.cfg.CreateRepoTimeoutSeconds), func(i int) error {
 		err := client.Query(ctx, &query, variables)
 		if err != nil {
@@ -562,14 +570,6 @@ func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 		}
 
 		configContent := query.Repository.Object.Blob.Text
-
-		var mutation struct {
-			CreateCommitOnBranch struct {
-				Commit struct {
-					OID string
-				}
-			} `graphql:"createCommitOnBranch(input: $input)"`
-		}
 
 		mutationVariables := createCommitOnBranchInput(ref, commit)
 
@@ -585,7 +585,11 @@ func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 		return nil
 	})
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	return g.waitForCommit(ctx, accessToken, commit.Owner, commit.Repo, mutation.CreateCommitOnBranch.Commit.OID)
 }
 
 func createCommitOnBranchInput(ref githubv4.String, commit *Commit) githubv4.CreateCommitOnBranchInput {
@@ -653,22 +657,17 @@ func (g *githubSource) GetDefaultBranch(ctx context.Context, accessToken *Access
 	return *gitRepo.DefaultBranch, nil
 }
 
-func (g *githubSource) WaitForCommit(ctx context.Context, accessToken *AccessToken, owner, repo, message string) error {
+func (g *githubSource) waitForCommit(ctx context.Context, accessToken *AccessToken, owner, repo, sha string) error {
 	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	err := retry.Retry(time.Duration(g.cfg.WaitTagTimeoutSeconds)*time.Second, func(i int) error {
-		ref, _, err := githubClient.GetRepoRef(ctx, owner, repo, "heads/main")
+		commit, err := githubClient.GetCommit(ctx, owner, repo, sha)
 		if err != nil {
 			return err
 		}
 
-		commit, err := githubClient.GetCommit(ctx, owner, repo, *ref.Object.SHA)
-		if err != nil {
-			return err
-		}
-
-		if *commit.Message != message {
-			return errors.Wrapf(ErrCommitNotFound, "last commit is not %s", message)
+		if *commit.SHA != sha {
+			return errors.Wrapf(ErrCommitNotFound, "last commit is not %s", sha)
 		}
 
 		return nil
