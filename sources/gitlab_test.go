@@ -293,7 +293,7 @@ func TestListOrgsAllInOnePage(t *testing.T) {
 	token := &sources.AccessToken{Token: "sometokenvalue"}
 	page := &api.PaginationRequest{Size: -1, Token: ""}
 	var groups []*gitlab.Group
-	groups = append(groups, &gitlab.Group{Name: "tests", FullPath: "test7929"})
+	groups = append(groups, &gitlab.Group{ID: 2345, Name: "tests", FullPath: "test7929"})
 	resp := &gitlab.Response{NextPage: 0, TotalItems: 1}
 
 	// Expect
@@ -306,7 +306,7 @@ func TestListOrgsAllInOnePage(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(pageResp.ResultSize, pageResp.TotalSize)
 	assert.Equal(1, len(orgs))
-	assert.Equal("test7929", orgs[0].Id)
+	assert.Equal("2345", orgs[0].Id)
 }
 
 func TestListOrgsWithTwoPages(t *testing.T) {

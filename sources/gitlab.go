@@ -143,7 +143,7 @@ func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 		for _, group := range groups {
 			org := &api.SccOrg{
 				Name: group.Name,
-				Id:   group.FullPath,
+				Id:   fmt.Sprint(group.ID),
 			}
 			orgs = append(orgs, org)
 		}
