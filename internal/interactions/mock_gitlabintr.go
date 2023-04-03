@@ -35,11 +35,12 @@ func (m *MockGitlabIntr) EXPECT() *MockGitlabIntrMockRecorder {
 }
 
 // CreateCommit mocks base method.
-func (m *MockGitlabIntr) CreateCommit(pid interface{}, opt *gitlab.CreateCommitOptions) error {
+func (m *MockGitlabIntr) CreateCommit(pid interface{}, opt *gitlab.CreateCommitOptions) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateCommit", pid, opt)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateCommit indicates an expected call of CreateCommit.
@@ -49,11 +50,12 @@ func (mr *MockGitlabIntrMockRecorder) CreateCommit(pid, opt interface{}) *gomock
 }
 
 // CreateProject mocks base method.
-func (m *MockGitlabIntr) CreateProject(opt *gitlab.CreateProjectOptions) error {
+func (m *MockGitlabIntr) CreateProject(opt *gitlab.CreateProjectOptions) (*gitlab.Project, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateProject", opt)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*gitlab.Project)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateProject indicates an expected call of CreateProject.

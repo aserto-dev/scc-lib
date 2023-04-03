@@ -422,9 +422,8 @@ func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 }
 
 // InitialTag creates a tag for a repo, if no other tags are defined for it.
-func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName, workflowFileName string) error {
+func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName, workflowFileName, commitSha string) error {
 	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
-
 	repoPieces := strings.Split(fullName, "/")
 	if len(repoPieces) != 2 {
 		return errors.Errorf("invalid full github repo name '%s', should be in the form owner/repo", fullName)
@@ -433,49 +432,47 @@ func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 	owner := repoPieces[0]
 	name := repoPieces[1]
 
+	client := g.graphqlFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
+
 	repo, err := githubClient.GetRepo(ctx, owner, name)
 	if err != nil {
 		return errors.Wrap(err, "failed to get repo")
 	}
 
-	tags, err := githubClient.ListRepoTags(ctx, owner, name, &github.ListOptions{})
-	if err != nil {
-		return errors.Wrapf(err, "failed to list tags for repo '%s/%s'", owner, name)
-	}
+	if commitSha == "" {
+		tags, err := githubClient.ListRepoTags(ctx, owner, name, &github.ListOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "failed to list tags for repo '%s/%s'", owner, name)
+		}
 
-	if len(tags) > 0 {
-		return nil
-	}
+		if len(tags) > 0 {
+			return nil
+		}
 
-	err = retry.Retry(time.Second*time.Duration(g.cfg.CreateRepoTimeoutSeconds), func(i int) error {
 		ref, response, err := githubClient.GetRepoRef(ctx, owner, name, "heads/"+*repo.DefaultBranch)
 		if err != nil {
 			return errors.Wrapf(err, "repo seems to be empty; response code from github [%d]", response.StatusCode)
 		}
+		commitSha = *ref.Ref
+	}
 
-		tag, err := githubClient.CreateRepoTag(ctx, owner, name, &github.Tag{
-			Tag:     &defaultTag,
-			Message: &defaultTag,
-			SHA:     ref.Object.SHA,
-			Object:  ref.Object,
-		})
-		if err != nil {
-			return errors.Wrap(err, "failed to create repo tag")
-		}
+	var mutation struct {
+		CreateRef struct {
+			Ref struct {
+				ID string
+			}
+		} `graphql:"createRef(input: $input)"`
+	}
 
-		tagRef := "refs/tags/" + *tag.Tag
-		err = githubClient.CreateRepoRef(ctx, owner, name, &github.Reference{
-			Ref:    &tagRef,
-			Object: tag.Object,
-		})
-		if err != nil {
-			return errors.Wrap(err, "failed to create tag ref")
-		}
-		return nil
-	})
+	input := githubv4.CreateRefInput{
+		RepositoryID: githubv4.ID(repo.NodeID),
+		Name:         githubv4.String("refs/tags/" + defaultTag),
+		Oid:          githubv4.GitObjectID(commitSha),
+	}
 
+	err = client.Mutate(ctx, &mutation, input, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create commit")
 	}
 
 	if workflowFileName != "" {
@@ -511,7 +508,7 @@ func (g *githubSource) forceRerunWorkflow(ctx context.Context, githubClient inte
 	return nil
 }
 
-func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *AccessToken, commit *Commit) error {
+func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *AccessToken, commit *Commit) (string, error) {
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{
 			AccessToken: accessToken.Token,
@@ -586,7 +583,7 @@ func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 	})
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	return g.waitForCommit(ctx, accessToken, commit.Owner, commit.Repo, mutation.CreateCommitOnBranch.Commit.OID)
@@ -657,7 +654,7 @@ func (g *githubSource) GetDefaultBranch(ctx context.Context, accessToken *Access
 	return *gitRepo.DefaultBranch, nil
 }
 
-func (g *githubSource) waitForCommit(ctx context.Context, accessToken *AccessToken, owner, repo, sha string) error {
+func (g *githubSource) waitForCommit(ctx context.Context, accessToken *AccessToken, owner, repo, sha string) (string, error) {
 	githubClient := g.interactionsFunc(ctx, accessToken.Token, accessToken.Type, g.cfg.RateLimitTimeoutSeconds, g.cfg.RateLimitRetryCount)
 
 	err := retry.Retry(time.Duration(g.cfg.WaitTagTimeoutSeconds)*time.Second, func(i int) error {
@@ -673,7 +670,7 @@ func (g *githubSource) waitForCommit(ctx context.Context, accessToken *AccessTok
 		return nil
 	})
 
-	return err
+	return sha, err
 }
 
 var errUnableToDecodePKey = errors.New("base64.StdEncoding.DecodeString was unable to decode public key")

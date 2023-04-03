@@ -323,7 +323,7 @@ func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 		Name:        &name,
 	}
 
-	err = client.CreateProject(opt)
+	proj, err := client.CreateProject(opt)
 
 	if err != nil {
 		return err
@@ -337,12 +337,12 @@ func (g *gitlabSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 		CreateAccessLevel: &permission,
 	}
 
-	err = client.ProtectRepositoryTags(owner+"/"+name, protectedTagOpt)
+	err = client.ProtectRepositoryTags(proj.ID, protectedTagOpt)
 
 	return err
 }
 
-func (g *gitlabSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName, workflowFileName string) error {
+func (g *gitlabSource) InitialTag(ctx context.Context, accessToken *AccessToken, fullName, workflowFileName, commitSha string) error {
 	client, err := g.interactionsFunc(accessToken.Token)
 
 	if err != nil {
@@ -366,8 +366,12 @@ func (g *gitlabSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 		return nil
 	}
 
+	if commitSha == "" {
+		commitSha = proj.DefaultBranch
+	}
+
 	opt := &gitlab.CreateTagOptions{
-		Ref:     &proj.DefaultBranch,
+		Ref:     &commitSha,
 		TagName: &defaultTag,
 		Message: &defaultTag,
 	}
@@ -443,11 +447,11 @@ func (g *gitlabSource) AddSecretToRepo(ctx context.Context, token *AccessToken, 
 	return err
 }
 
-func (g *gitlabSource) CreateCommitOnBranch(ctx context.Context, accessToken *AccessToken, commit *Commit) error {
+func (g *gitlabSource) CreateCommitOnBranch(ctx context.Context, accessToken *AccessToken, commit *Commit) (string, error) {
 	client, err := g.interactionsFunc(accessToken.Token)
 
 	if err != nil {
-		return errors.Wrap(err, "failed to create Gitlab client")
+		return "", errors.Wrap(err, "failed to create Gitlab client")
 	}
 
 	var actions []*gitlab.CommitActionOptions
@@ -478,9 +482,9 @@ func (g *gitlabSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 		Actions:       actions,
 	}
 
-	err = client.CreateCommit(repo, opt)
+	commitSha, err := client.CreateCommit(repo, opt)
 
-	return err
+	return commitSha, err
 }
 
 func (g *gitlabSource) GetDefaultBranch(ctx context.Context, accessToken *AccessToken, owner, repo string) (string, error) {

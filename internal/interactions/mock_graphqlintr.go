@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	githubv4 "github.com/shurcooL/githubv4"
 )
 
 // MockGraphqlIntr is a mock of GraphqlIntr interface.
@@ -32,6 +33,20 @@ func NewMockGraphqlIntr(ctrl *gomock.Controller) *MockGraphqlIntr {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockGraphqlIntr) EXPECT() *MockGraphqlIntrMockRecorder {
 	return m.recorder
+}
+
+// Mutate mocks base method.
+func (m *MockGraphqlIntr) Mutate(arg0 context.Context, arg1 interface{}, arg2 githubv4.Input, arg3 map[string]interface{}) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Mutate", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Mutate indicates an expected call of Mutate.
+func (mr *MockGraphqlIntrMockRecorder) Mutate(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mutate", reflect.TypeOf((*MockGraphqlIntr)(nil).Mutate), arg0, arg1, arg2, arg3)
 }
 
 // Query mocks base method.
