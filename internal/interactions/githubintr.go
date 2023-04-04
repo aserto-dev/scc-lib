@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/aserto-dev/go-utils/cerr"
+	"github.com/aserto-dev/scc-lib/errx"
 	"github.com/google/go-github/v33/github"
 	"golang.org/x/oauth2"
 )
@@ -227,9 +227,9 @@ retryLoop:
 			return err
 		}
 		if tryCount >= gh.retryCount {
-			return cerr.ErrRetryTimeout.Msg("reached retry limit")
+			return errx.ErrRetryTimeout.Msg("reached retry limit")
 		}
 	}
 
-	return cerr.ErrRetryTimeout.Err(err)
+	return errx.ErrRetryTimeout.Err(err)
 }

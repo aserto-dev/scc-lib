@@ -9,7 +9,7 @@ import (
 
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	scc "github.com/aserto-dev/go-grpc/aserto/tenant/scc/v1"
-	"github.com/aserto-dev/go-utils/cerr"
+	"github.com/aserto-dev/scc-lib/errx"
 	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/friendsofgo/errors"
 	"github.com/rs/zerolog"
@@ -40,7 +40,7 @@ func (g *gitlabSource) ValidateConnection(ctx context.Context, accessToken *Acce
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return cerr.ErrProviderVerification.
+		return errx.ErrProviderVerification.
 			Str("status", response.Status).
 			Int("status-code", response.StatusCode).
 			FromReader("gitlab-response", response.Body).
@@ -418,7 +418,7 @@ func (g *gitlabSource) AddSecretToRepo(ctx context.Context, token *AccessToken, 
 	}
 
 	if !overrideSecret && hasSecret {
-		return cerr.ErrRepoAlreadyConnected.Msg("you're trying to link to an existing repository that already has a secret. Please consider overwriting the Aserto push secret.").Str("repo", orgName+"/"+repoName)
+		return errx.ErrRepoAlreadyConnected.Msg("you're trying to link to an existing repository that already has a secret. Please consider overwriting the Aserto push secret.").Str("repo", orgName+"/"+repoName)
 	}
 
 	repo := orgName + "/" + repoName
