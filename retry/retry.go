@@ -3,7 +3,7 @@ package retry
 import (
 	"time"
 
-	"github.com/aserto-dev/go-utils/cerr"
+	"github.com/aserto-dev/scc-lib/errx"
 	"github.com/jpillora/backoff"
 )
 
@@ -25,7 +25,7 @@ func Retry(timeout time.Duration, f func(int) error) (err error) {
 	if timeout == 0 {
 		err = f(attempt)
 		if err != nil {
-			return cerr.ErrRetryTimeout.Err(err)
+			return errx.ErrRetryTimeout.Err(err)
 		}
 		return nil
 	}
@@ -47,5 +47,5 @@ retryLoop:
 		time.Sleep(b.Duration())
 	}
 
-	return cerr.ErrRetryTimeout.Err(err)
+	return errx.ErrRetryTimeout.Err(err)
 }

@@ -11,7 +11,7 @@ import (
 
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	scc "github.com/aserto-dev/go-grpc/aserto/tenant/scc/v1"
-	"github.com/aserto-dev/go-utils/cerr"
+	"github.com/aserto-dev/scc-lib/errx"
 	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/aserto-dev/scc-lib/retry"
 	"github.com/google/go-github/v33/github"
@@ -50,7 +50,7 @@ func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *Acce
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return cerr.ErrProviderVerification.
+		return errx.ErrProviderVerification.
 			Str("status", response.Status).
 			Int("status-code", response.StatusCode).
 			FromReader("github-response", response.Body).
@@ -67,7 +67,7 @@ func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *Acce
 		for _, rs := range requiredScopes {
 			r, err := regexp.Compile(rs)
 			if err != nil {
-				return cerr.ErrProviderVerification.Err(err).Msgf("failed to compile regexp: %s", err.Error())
+				return errx.ErrProviderVerification.Err(err).Msgf("failed to compile regexp: %s", err.Error())
 			}
 			if r.MatchString(strings.TrimSpace(es)) {
 				foundScopes[rs] = true
@@ -76,7 +76,7 @@ func (g *githubSource) ValidateConnection(ctx context.Context, accessToken *Acce
 		}
 	}
 	if len(foundScopes) != len(requiredScopes) {
-		return cerr.ErrProviderVerification.
+		return errx.ErrProviderVerification.
 			Interface("provided-scopes", scopeSlice).
 			Interface("required-scopes", requiredScopes).
 			Msg("github access token is missing scopes")
@@ -186,7 +186,7 @@ func (g *githubSource) AddSecretToRepo(ctx context.Context, accessToken *AccessT
 			return err
 		}
 		if hasSecret {
-			return cerr.ErrRepoAlreadyConnected.Msg("you’re trying to link to an existing repository that already has a secret. Please consider overwriting the Aserto push secret.").Str("repo", orgName+"/"+repoName)
+			return errx.ErrRepoAlreadyConnected.Msg("you’re trying to link to an existing repository that already has a secret. Please consider overwriting the Aserto push secret.").Str("repo", orgName+"/"+repoName)
 		}
 	}
 
@@ -202,7 +202,7 @@ func (g *githubSource) AddSecretToRepo(ctx context.Context, accessToken *AccessT
 	})
 
 	if err != nil {
-		return cerr.ErrGithubSecret.Err(err).Str("repo", orgName+"/"+repoName).Str("secret-name", secretName).FromReader("github-response", response.Body)
+		return errx.ErrGithubSecret.Err(err).Str("repo", orgName+"/"+repoName).Str("secret-name", secretName).FromReader("github-response", response.Body)
 	}
 
 	return nil
@@ -412,7 +412,7 @@ func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 
 	err = githubClient.CreateRepo(ctx, owner, &github.Repository{
 		Name:     &name,
-		AutoInit: pointer.BoolPtr(true),
+		AutoInit: pointer.Bool(true),
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to create repo")
