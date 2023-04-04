@@ -17,14 +17,14 @@ type GitlabIntr interface {
 	ListGroups(opt *gitlab.ListGroupsOptions) ([]*gitlab.Group, *gitlab.Response, error)
 	GetProject(pid interface{}) (*gitlab.Project, *gitlab.Response, error)
 	GetNamespace(id interface{}) (*gitlab.Namespace, error)
-	CreateProject(opt *gitlab.CreateProjectOptions) error
+	CreateProject(opt *gitlab.CreateProjectOptions) (*gitlab.Project, error)
 	ProtectRepositoryTags(pid interface{}, opt *gitlab.ProtectRepositoryTagsOptions) error
 	CreateTag(pid interface{}, opt *gitlab.CreateTagOptions) error
 	GetProjectVariable(pid interface{}, key string) (*gitlab.ProjectVariable, *gitlab.Response, error)
 	UpdateProjectVariable(pid interface{}, key string, opt *gitlab.UpdateProjectVariableOptions) error
 	CreateProjectVariable(pid interface{}, opt *gitlab.CreateProjectVariableOptions) error
 	GetProjectFile(pid interface{}, fileName string, opt *gitlab.GetFileOptions) error
-	CreateCommit(pid interface{}, opt *gitlab.CreateCommitOptions) error
+	CreateCommit(pid interface{}, opt *gitlab.CreateCommitOptions) (string, error)
 }
 
 type gitlabInteraction struct {
@@ -78,9 +78,9 @@ func (gi *gitlabInteraction) GetNamespace(id interface{}) (*gitlab.Namespace, er
 	return namespace, err
 }
 
-func (gi *gitlabInteraction) CreateProject(opt *gitlab.CreateProjectOptions) error {
-	_, _, err := gi.Client.Projects.CreateProject(opt)
-	return err
+func (gi *gitlabInteraction) CreateProject(opt *gitlab.CreateProjectOptions) (*gitlab.Project, error) {
+	proj, _, err := gi.Client.Projects.CreateProject(opt)
+	return proj, err
 }
 
 func (gi *gitlabInteraction) ProtectRepositoryTags(pid interface{}, opt *gitlab.ProtectRepositoryTagsOptions) error {
@@ -112,7 +112,10 @@ func (gi *gitlabInteraction) GetProjectFile(pid interface{}, fileName string, op
 	return err
 }
 
-func (gi *gitlabInteraction) CreateCommit(pid interface{}, opt *gitlab.CreateCommitOptions) error {
-	_, _, err := gi.Client.Commits.CreateCommit(pid, opt)
-	return err
+func (gi *gitlabInteraction) CreateCommit(pid interface{}, opt *gitlab.CreateCommitOptions) (string, error) {
+	commit, _, err := gi.Client.Commits.CreateCommit(pid, opt)
+	if err != nil {
+		return "", err
+	}
+	return commit.ID, err
 }

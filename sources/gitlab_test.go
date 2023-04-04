@@ -550,7 +550,7 @@ func TestCreateRepoFails(t *testing.T) {
 
 	// Expect
 	mockIntr.EXPECT().GetNamespace("aserto-dev").Return(namespace, nil)
-	mockIntr.EXPECT().CreateProject(gomock.Any()).Return(errors.New("failed to create repo"))
+	mockIntr.EXPECT().CreateProject(gomock.Any()).Return(nil, errors.New("failed to create repo"))
 
 	// Act
 	err := p.CreateRepo(context.Background(), token, "aserto-dev", "policy")
@@ -568,10 +568,11 @@ func TestCreateRepoProtectTagsFails(t *testing.T) {
 	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
 	token := &sources.AccessToken{Token: "sometokenvalue"}
 	namespace := &gitlab.Namespace{ID: 1001}
+	createdGitlabProj := &gitlab.Project{ID: 654}
 
 	// Expect
 	mockIntr.EXPECT().GetNamespace("aserto-dev").Return(namespace, nil)
-	mockIntr.EXPECT().CreateProject(gomock.Any()).Return(nil)
+	mockIntr.EXPECT().CreateProject(gomock.Any()).Return(createdGitlabProj, nil)
 	mockIntr.EXPECT().ProtectRepositoryTags(gomock.Any(), gomock.Any()).Return(errors.New("failed to protct tags"))
 
 	// Act
@@ -590,10 +591,11 @@ func TestCreateRepo(t *testing.T) {
 	p := sources.NewTestGitlab(ctrl, &zerolog.Logger{}, &sources.Config{}, mockintrFunc)
 	token := &sources.AccessToken{Token: "sometokenvalue"}
 	namespace := &gitlab.Namespace{ID: 1001}
+	createdGitlabProj := &gitlab.Project{ID: 654}
 
 	// Expect
 	mockIntr.EXPECT().GetNamespace("aserto-dev").Return(namespace, nil)
-	mockIntr.EXPECT().CreateProject(gomock.Any()).Return(nil)
+	mockIntr.EXPECT().CreateProject(gomock.Any()).Return(createdGitlabProj, nil)
 	mockIntr.EXPECT().ProtectRepositoryTags(gomock.Any(), gomock.Any()).Return(nil)
 
 	// Act
@@ -612,7 +614,7 @@ func TestInitialTagWithWrongFullName(t *testing.T) {
 	token := &sources.AccessToken{Token: "sometokenvalue"}
 
 	// Act
-	err := p.InitialTag(context.Background(), token, "aserto-dev", "")
+	err := p.InitialTag(context.Background(), token, "aserto-dev", "", "")
 
 	// Assert
 	assert.Error(err)
@@ -633,7 +635,7 @@ func TestInitialTagWithRepoAlreadyTagged(t *testing.T) {
 	mockIntr.EXPECT().GetProject("aserto-dev/policy").Return(proj, nil, nil)
 
 	// Act
-	err := p.InitialTag(context.Background(), token, "aserto-dev/policy", "")
+	err := p.InitialTag(context.Background(), token, "aserto-dev/policy", "", "")
 
 	// Assert
 	assert.NoError(err)
@@ -654,7 +656,7 @@ func TestInitialTagFails(t *testing.T) {
 	mockIntr.EXPECT().CreateTag(gomock.Any(), gomock.Any()).Return(errors.New("failed to create tag"))
 
 	// Act
-	err := p.InitialTag(context.Background(), token, "aserto-dev/policy", "")
+	err := p.InitialTag(context.Background(), token, "aserto-dev/policy", "", "")
 
 	// Assert
 	assert.Error(err)
@@ -676,7 +678,7 @@ func TestInitialTag(t *testing.T) {
 	mockIntr.EXPECT().CreateTag(gomock.Any(), gomock.Any()).Return(nil)
 
 	// Act
-	err := p.InitialTag(context.Background(), token, "aserto-dev/policy", "")
+	err := p.InitialTag(context.Background(), token, "aserto-dev/policy", "", "")
 
 	// Assert
 	assert.NoError(err)
@@ -848,10 +850,10 @@ func TestCommitOnBranchFails(t *testing.T) {
 
 	// Expect
 	mockIntr.EXPECT().GetProjectFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("failed to connect to server"))
-	mockIntr.EXPECT().CreateCommit(gomock.Any(), gomock.Any()).Return(errors.New("failed to create commit"))
+	mockIntr.EXPECT().CreateCommit(gomock.Any(), gomock.Any()).Return("", errors.New("failed to create commit"))
 
 	// Act
-	err := p.CreateCommitOnBranch(context.Background(), token, &commit)
+	_, err := p.CreateCommitOnBranch(context.Background(), token, &commit)
 
 	// Assert
 	assert.Error(err)
@@ -874,14 +876,16 @@ func TestCommitOnBranch(t *testing.T) {
 		Repo:    repo,
 		Content: content,
 	}
+	returnedSha := "sha256"
 
 	// Expect
 	mockIntr.EXPECT().GetProjectFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("failed to connect to server"))
-	mockIntr.EXPECT().CreateCommit(gomock.Any(), gomock.Any()).Return(nil)
+	mockIntr.EXPECT().CreateCommit(gomock.Any(), gomock.Any()).Return(returnedSha, nil)
 
 	// Act
-	err := p.CreateCommitOnBranch(context.Background(), token, &commit)
+	commitSha, err := p.CreateCommitOnBranch(context.Background(), token, &commit)
 
 	// Assert
 	assert.NoError(err)
+	assert.Equal(returnedSha, commitSha)
 }

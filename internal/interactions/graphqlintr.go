@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/shurcooL/graphql"
+	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 )
 
@@ -14,10 +14,11 @@ type GqlIntr func(ctx context.Context, token, tokenType string, retryLimitTimeou
 
 type GraphqlIntr interface {
 	Query(context.Context, interface{}, map[string]interface{}) error
+	Mutate(context.Context, interface{}, githubv4.Input, map[string]interface{}) error
 }
 
 type graphqlInteraction struct {
-	Client *graphql.Client
+	Client *githubv4.Client
 }
 
 func NewGraphqlInteraction() GqlIntr {
@@ -40,7 +41,7 @@ func NewGraphqlInteraction() GqlIntr {
 			src,
 		)
 
-		client := graphql.NewClient("https://api.github.com/graphql", httpClient)
+		client := githubv4.NewClient(httpClient)
 
 		return &graphqlInteraction{Client: client}
 	}
@@ -48,4 +49,8 @@ func NewGraphqlInteraction() GqlIntr {
 
 func (g *graphqlInteraction) Query(ctx context.Context, query interface{}, vars map[string]interface{}) error {
 	return g.Client.Query(ctx, query, vars)
+}
+
+func (g *graphqlInteraction) Mutate(ctx context.Context, m interface{}, input githubv4.Input, variables map[string]interface{}) error {
+	return g.Client.Mutate(ctx, m, input, variables)
 }

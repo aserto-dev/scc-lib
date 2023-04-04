@@ -38,7 +38,7 @@ type Source interface {
 	GetRepo(ctx context.Context, accessToken *AccessToken, owner, repo string) (*scc.Repo, error)
 	HasSecret(ctx context.Context, token *AccessToken, owner, repo, secretName string) (bool, error)
 	AddSecretToRepo(ctx context.Context, token *AccessToken, orgName, repoName, secretName, value string, overrideSecret bool) error
-	InitialTag(ctx context.Context, accessToken *AccessToken, fullName, workflowFileName string) error
-	CreateCommitOnBranch(ctx context.Context, accessToken *AccessToken, commit *Commit) error
+	InitialTag(ctx context.Context, accessToken *AccessToken, fullName, workflowFileName, commitSHA string) error
+	CreateCommitOnBranch(ctx context.Context, accessToken *AccessToken, commit *Commit) (string, error)
 	GetDefaultBranch(ctx context.Context, accessToken *AccessToken, owner, repo string) (string, error)
 }
