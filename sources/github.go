@@ -14,7 +14,7 @@ import (
 	"github.com/aserto-dev/scc-lib/errx"
 	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/aserto-dev/scc-lib/retry"
-	"github.com/google/go-github/v33/github"
+	"github.com/google/go-github/v53/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/shurcooL/githubv4"
@@ -584,6 +584,10 @@ func (g *githubSource) CreateCommitOnBranch(ctx context.Context, accessToken *Ac
 
 	if err != nil {
 		return "", err
+	}
+
+	if mutation.CreateCommitOnBranch.Commit.OID == "" {
+		return "", nil
 	}
 
 	return g.waitForCommit(ctx, accessToken, commit.Owner, commit.Repo, mutation.CreateCommitOnBranch.Commit.OID)

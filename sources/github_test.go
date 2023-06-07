@@ -12,7 +12,7 @@ import (
 	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/aserto-dev/scc-lib/sources"
 	gomock "github.com/golang/mock/gomock"
-	"github.com/google/go-github/v33/github"
+	"github.com/google/go-github/v53/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"

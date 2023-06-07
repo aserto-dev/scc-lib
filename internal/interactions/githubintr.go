@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/aserto-dev/scc-lib/errx"
-	"github.com/google/go-github/v33/github"
+	"github.com/google/go-github/v53/github"
 	"golang.org/x/oauth2"
 )
 
