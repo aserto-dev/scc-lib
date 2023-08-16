@@ -453,7 +453,7 @@ func (g *githubSource) InitialTag(ctx context.Context, accessToken *AccessToken,
 		if err != nil {
 			return errors.Wrapf(err, "repo seems to be empty; response code from github [%d]", response.StatusCode)
 		}
-		commitSha = *ref.Ref
+		commitSha = *ref.Object.SHA
 	}
 
 	var mutation struct {
