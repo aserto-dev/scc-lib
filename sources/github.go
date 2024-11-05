@@ -14,14 +14,14 @@ import (
 	"github.com/aserto-dev/scc-lib/errx"
 	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/aserto-dev/scc-lib/retry"
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v66/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/shurcooL/githubv4"
 	"github.com/shurcooL/graphql"
 	"golang.org/x/crypto/nacl/box"
 	"golang.org/x/oauth2"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -267,7 +267,7 @@ func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 
 		resp := &api.PaginationResponse{
 			NextToken:  string(query.Viewer.Organizations.PageInfo.EndCursor),
-			ResultSize: int32(len(result)),
+			ResultSize: int32(len(result)), // nolint: gosec
 			TotalSize:  int32(query.Viewer.Organizations.TotalCount),
 		}
 
@@ -283,8 +283,8 @@ func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 
 	resp := &api.PaginationResponse{
 		NextToken:  "",
-		ResultSize: int32(len(result)),
-		TotalSize:  int32(len(result)),
+		ResultSize: int32(len(result)), // nolint: gosec
+		TotalSize:  int32(len(result)), // nolint: gosec
 	}
 
 	return result, resp, nil
@@ -357,7 +357,7 @@ func (g *githubSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 
 		resp := &api.PaginationResponse{
 			NextToken:  string(query.Search.PageInfo.EndCursor),
-			ResultSize: int32(len(result)),
+			ResultSize: int32(len(result)), // nolint: gosec
 			TotalSize:  int32(query.Search.RepositoryCount),
 		}
 
@@ -373,8 +373,8 @@ func (g *githubSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 
 	resp := &api.PaginationResponse{
 		NextToken:  "",
-		ResultSize: int32(len(result)),
-		TotalSize:  int32(len(result)),
+		ResultSize: int32(len(result)), // nolint: gosec
+		TotalSize:  int32(len(result)), // nolint: gosec
 	}
 
 	return result, resp, nil
@@ -412,7 +412,7 @@ func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 
 	err = githubClient.CreateRepo(ctx, owner, &github.Repository{
 		Name:     &name,
-		AutoInit: pointer.Bool(true),
+		AutoInit: ptr.To(true),
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to create repo")

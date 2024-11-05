@@ -11,11 +11,11 @@ import (
 	"github.com/aserto-dev/go-grpc/aserto/api/v1"
 	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/aserto-dev/scc-lib/sources"
-	gomock "github.com/golang/mock/gomock"
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v66/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 const (

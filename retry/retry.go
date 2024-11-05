@@ -40,7 +40,7 @@ retryLoop:
 
 		err = f(attempt)
 		if err == nil {
-			return
+			return nil
 		}
 
 		attempt++

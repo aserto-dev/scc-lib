@@ -5,9 +5,9 @@ package sources
 
 import (
 	"github.com/aserto-dev/scc-lib/internal/interactions"
-	gomock "github.com/golang/mock/gomock"
 	"github.com/google/wire"
 	"github.com/rs/zerolog"
+	"go.uber.org/mock/gomock"
 )
 
 func NewGitlab(log *zerolog.Logger, cfg *Config) Source {

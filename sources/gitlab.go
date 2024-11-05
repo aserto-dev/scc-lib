@@ -150,8 +150,8 @@ func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 
 		response := &api.PaginationResponse{
 			NextToken:  fmt.Sprintf("%d", resp.NextPage),
-			ResultSize: int32(len(orgs)),
-			TotalSize:  int32(resp.TotalItems),
+			ResultSize: int32(len(orgs)),       // nolint: gosec
+			TotalSize:  int32(resp.TotalItems), // nolint: gosec
 		}
 
 		if page.Size != -1 {
@@ -166,8 +166,8 @@ func (g *gitlabSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 
 	response := &api.PaginationResponse{
 		NextToken:  "",
-		ResultSize: int32(len(orgs)),
-		TotalSize:  int32(len(orgs)),
+		ResultSize: int32(len(orgs)), // nolint: gosec
+		TotalSize:  int32(len(orgs)), // nolint: gosec
 	}
 	return orgs, response, nil
 }
@@ -248,8 +248,8 @@ func (g *gitlabSource) listPagedRepos(
 
 		response := &api.PaginationResponse{
 			NextToken:  fmt.Sprintf("%d", resp.NextPage),
-			ResultSize: int32(len(repos)),
-			TotalSize:  int32(resp.TotalItems),
+			ResultSize: int32(len(repos)),      // nolint: gosec
+			TotalSize:  int32(resp.TotalItems), // nolint: gosec
 		}
 
 		if pageSize != -1 {
@@ -264,8 +264,8 @@ func (g *gitlabSource) listPagedRepos(
 
 	response := &api.PaginationResponse{
 		NextToken:  "",
-		ResultSize: int32(len(repos)),
-		TotalSize:  int32(len(repos)),
+		ResultSize: int32(len(repos)), // nolint: gosec
+		TotalSize:  int32(len(repos)), // nolint: gosec
 	}
 	return repos, response, nil
 }
