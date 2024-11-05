@@ -1,8 +1,8 @@
 module github.com/aserto-dev/scc-lib
 
-go 1.21
+go 1.22.8
 
-toolchain go1.22.8
+toolchain go1.23.2
 
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
@@ -14,7 +14,6 @@ require (
 	github.com/google/wire v0.5.0
 	github.com/hashicorp/go-retryablehttp v0.7.2
 	github.com/jpillora/backoff v1.0.0
-	github.com/magefile/mage v1.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.29.0
 	github.com/shurcooL/githubv4 v0.0.0-20230424031643-6cea62ecd5a9
@@ -41,6 +40,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
+	github.com/magefile/mage v1.14.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect

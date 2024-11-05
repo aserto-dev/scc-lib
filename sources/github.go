@@ -267,7 +267,7 @@ func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 
 		resp := &api.PaginationResponse{
 			NextToken:  string(query.Viewer.Organizations.PageInfo.EndCursor),
-			ResultSize: int32(len(result)),
+			ResultSize: int32(len(result)), // nolint: gosec
 			TotalSize:  int32(query.Viewer.Organizations.TotalCount),
 		}
 
@@ -283,8 +283,8 @@ func (g *githubSource) ListOrgs(ctx context.Context, accessToken *AccessToken, p
 
 	resp := &api.PaginationResponse{
 		NextToken:  "",
-		ResultSize: int32(len(result)),
-		TotalSize:  int32(len(result)),
+		ResultSize: int32(len(result)), // nolint: gosec
+		TotalSize:  int32(len(result)), // nolint: gosec
 	}
 
 	return result, resp, nil
@@ -357,7 +357,7 @@ func (g *githubSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 
 		resp := &api.PaginationResponse{
 			NextToken:  string(query.Search.PageInfo.EndCursor),
-			ResultSize: int32(len(result)),
+			ResultSize: int32(len(result)), // nolint: gosec
 			TotalSize:  int32(query.Search.RepositoryCount),
 		}
 
@@ -373,8 +373,8 @@ func (g *githubSource) ListRepos(ctx context.Context, accessToken *AccessToken, 
 
 	resp := &api.PaginationResponse{
 		NextToken:  "",
-		ResultSize: int32(len(result)),
-		TotalSize:  int32(len(result)),
+		ResultSize: int32(len(result)), // nolint: gosec
+		TotalSize:  int32(len(result)), // nolint: gosec
 	}
 
 	return result, resp, nil
