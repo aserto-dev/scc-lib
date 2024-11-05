@@ -21,7 +21,7 @@ import (
 	"github.com/shurcooL/graphql"
 	"golang.org/x/crypto/nacl/box"
 	"golang.org/x/oauth2"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -412,7 +412,7 @@ func (g *githubSource) CreateRepo(ctx context.Context, accessToken *AccessToken,
 
 	err = githubClient.CreateRepo(ctx, owner, &github.Repository{
 		Name:     &name,
-		AutoInit: pointer.Bool(true),
+		AutoInit: ptr.To(true),
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to create repo")
