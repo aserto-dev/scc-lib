@@ -14,7 +14,7 @@ import (
 	"github.com/aserto-dev/scc-lib/errx"
 	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/aserto-dev/scc-lib/retry"
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v66/github"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/shurcooL/githubv4"
