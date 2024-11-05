@@ -18,13 +18,14 @@ EXT_TMP_DIR		:= ${EXT_DIR}/tmp
 SVU_VERSION 	:= 1.12.0
 GOTESTSUM_VERSION := 1.11.0
 GOLANGCI-LINT_VERSION := 1.61.0
+MOCKGEN_VERSION := 0.5.0
 
 RELEASE_TAG		:= $$(svu)
 
 .DEFAULT_GOAL := build
 
 .PHONY: deps
-deps: info install-svu install-golangci-lint install-gotestsum
+deps: info install-svu install-golangci-lint install-gotestsum install-mockgen
 	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
 
 .PHONY: generate
@@ -91,6 +92,11 @@ install-golangci-lint: ${EXT_TMP_DIR} ${EXT_BIN_DIR}
 	@mv ${EXT_TMP_DIR}/golangci-lint ${EXT_BIN_DIR}/golangci-lint
 	@chmod +x ${EXT_BIN_DIR}/golangci-lint
 	@${EXT_BIN_DIR}/golangci-lint --version
+
+.PHONY: install-mockgen
+install-mockgen:
+	@echo -e "$(ATTN_COLOR)==> $@ $(NO_COLOR)"
+	@go install go.uber.org/mock/mockgen@v${MOCKGEN_VERSION}
 
 .PHONY: clean
 clean:
