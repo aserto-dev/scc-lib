@@ -2,7 +2,7 @@ package interactions
 
 import (
 	"github.com/pkg/errors"
-	"github.com/xanzy/go-gitlab"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 //go:generate mockgen -source=gitlabintr.go -destination=mock_gitlabintr.go -package=interactions --build_flags=--mod=mod

@@ -13,7 +13,7 @@ import (
 	"github.com/aserto-dev/scc-lib/internal/interactions"
 	"github.com/friendsofgo/errors"
 	"github.com/rs/zerolog"
-	"github.com/xanzy/go-gitlab"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 var (
