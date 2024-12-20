@@ -2,6 +2,7 @@ package interactions
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/aserto-dev/scc-lib/errx"
@@ -210,25 +211,29 @@ func (gh *githubInteraction) withSecondaryRateLimitRetry(f func() error) (err er
 	tryCount := 0
 retryLoop:
 	for t := time.After(timeout); ; {
+		tryCount++
+		err = f()
+		if err == nil {
+			return nil
+		}
+
+		var ghErr *github.AbuseRateLimitError
+		if errors.As(err, &ghErr) {
+			time.Sleep(*ghErr.RetryAfter)
+		} else {
+			return err
+		}
+
+		if tryCount >= gh.retryCount {
+			return errx.ErrRetryTimeout.Msg("reached retry limit")
+		}
+
 		select {
 		case <-t:
 			break retryLoop
 		default:
 		}
 
-		tryCount++
-		err = f()
-		if err == nil {
-			return nil
-		}
-		if ghErr, ok := err.(*github.AbuseRateLimitError); ok {
-			time.Sleep(*ghErr.RetryAfter)
-		} else {
-			return err
-		}
-		if tryCount >= gh.retryCount {
-			return errx.ErrRetryTimeout.Msg("reached retry limit")
-		}
 	}
 
 	return errx.ErrRetryTimeout.Err(err)
